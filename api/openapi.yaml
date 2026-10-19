@@ -296,6 +296,58 @@ paths:
                 passwordLogin: { value: { invite_only: true, allow_guest: false, password_login: true } }
                 media: { value: { invite_only: false, allow_guest: true, media: { imageMB: 2, gifMB: 8, videoMB: 40, videoSec: 60, quotaMB: 200, workouts: true } } }
 
+  /api/programs:
+    get:
+      tags: [meta]
+      operationId: listPrograms
+      summary: Browse the KeyLifts program catalogue
+      security: []
+      parameters:
+        - { name: q, in: query, schema: { type: string }, description: Search name, family, phase, or goal. }
+        - { name: source, in: query, schema: { type: string, enum: [official, community] } }
+        - { name: offset, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 500, default: 100 } }
+      responses:
+        '200':
+          description: A page of active programs from the latest imported catalogue snapshot.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  programs: { type: array, items: { $ref: '#/components/schemas/Program' } }
+                  total: { type: integer }
+                  offset: { type: integer }
+                  limit: { type: integer }
+                  sourceCheckedAt: { type: string, format: date-time }
+        '400':
+          description: Invalid source or paging value.
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+
+  /api/program:
+    get:
+      tags: [meta]
+      operationId: getProgram
+      summary: Read one KeyLifts program catalogue entry
+      security: []
+      parameters:
+        - { name: id, in: query, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: The matching catalogue entry.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  program: { $ref: '#/components/schemas/Program' }
+        '400':
+          description: The id query parameter is missing.
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '404':
+          description: No active program has that id.
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+
   /api/me:
     get:
       tags: [auth]
@@ -3099,6 +3151,23 @@ components:
           example: { error: "that code is wrong, used or expired", code: "link-invalid" }
 
   schemas:
+    Program:
+      type: object
+      required: [id, name, source, catalogStatus]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        source: { type: string, enum: [official, community] }
+        family: { type: ['string', 'null'] }
+        phase: { type: ['string', 'null'] }
+        goal: { type: ['string', 'null'] }
+        weeks: { type: ['integer', 'null'] }
+        daysPerWeek: { type: ['integer', 'null'] }
+        userCount: { type: ['integer', 'null'] }
+        workoutCount: { type: ['integer', 'null'] }
+        catalogStatus: { type: string, enum: [indexed, metadata-only] }
+        sourceUrl: { type: ['string', 'null'], format: uri }
+
     Error:
       type: object
       required: [error]
