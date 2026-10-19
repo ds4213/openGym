@@ -21,11 +21,16 @@ def main():
         official = {row["id"]: row for row in csv.DictReader(handle)}
     with (args.source / "community-export" / "community-programs.csv").open(encoding="utf-8-sig", newline="") as handle:
         community = {row["id"]: row for row in csv.DictReader(handle)}
+    community_source = {
+        row["id"]: row
+        for row in json.loads((args.source / "community-export" / "source-templates.json").read_text(encoding="utf-8"))
+    }
 
     programs = []
     for item in active:
         source = "official" if item["is_verified"] else "community"
         row = (official if source == "official" else community).get(item["id"])
+        raw = community_source.get(item["id"])
         programs.append({
             "id": item["id"],
             "name": item["name"],
@@ -39,6 +44,8 @@ def main():
             "workoutCount": integer(row.get("workout_count") or row.get("workouts_in_bundle")) if row else None,
             "catalogStatus": "indexed" if row else "metadata-only",
             "sourceUrl": row.get("public_url_candidate") or None if row and source == "official" else None,
+            "createdAt": raw.get("server_created_at") if raw else None,
+            "updatedAt": raw.get("server_updated_at") if raw else None,
         })
 
     ids = [program["id"] for program in programs]

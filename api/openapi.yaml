@@ -3167,6 +3167,8 @@ components:
         workoutCount: { type: ['integer', 'null'] }
         catalogStatus: { type: string, enum: [indexed, metadata-only] }
         sourceUrl: { type: ['string', 'null'], format: uri }
+        createdAt: { type: ['string', 'null'], format: date-time }
+        updatedAt: { type: ['string', 'null'], format: date-time }
 
     Error:
       type: object

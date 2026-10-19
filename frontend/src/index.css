@@ -484,6 +484,40 @@ h4.sec{
 
 /* ----------------------------------------------------------------- list -- */
 .list{display:flex;flex-direction:column;gap:8px}
+
+/* Program discovery: a quick editorial browse first, then the dense catalogue. The rails keep
+   one-handed phone browsing horizontal while the full list stays vertical and searchable. */
+.programs-page{padding-bottom:24px}
+.program-title{margin-bottom:10px}
+.program-tabs{margin-bottom:12px}
+.programs-page>.searchf{margin-bottom:4px}
+.program-discover-sections{margin-top:24px;display:flex;flex-direction:column;gap:30px}
+.program-section-head{margin:0 2px 12px}
+.program-section-head h2,.program-browser-head h2{font-size:22px;line-height:1.15;letter-spacing:-.02em;margin:0}
+.program-section-head p{font-size:13px;color:var(--label-2);margin:5px 0 0;line-height:1.35}
+.program-rail{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;padding:2px 16px 8px;margin-inline:-16px}
+.program-rail::-webkit-scrollbar{display:none}
+.program-card{flex:0 0 min(76vw,268px);min-height:146px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:flex-start;text-align:start;padding:16px;background:var(--surface);border-radius:var(--r-lg);color:var(--label);box-shadow:0 6px 18px rgba(0,0,0,.14);transition:transform .16s ease-out,background .16s ease-out}
+.program-card:active{transform:scale(.975);background:var(--surface-2)}
+.program-card strong{font-size:18px;line-height:1.2;letter-spacing:-.015em;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.program-card-meta{font-size:13px;color:var(--label-2);line-height:1.35;margin-top:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.program-card-foot{width:100%;display:flex;justify-content:space-between;gap:10px;color:var(--acc);font-size:12px;margin-top:auto;padding-top:12px}
+.program-card-foot span:last-child{color:var(--label-2);text-align:end}
+.program-browser{margin-top:34px}
+.program-browser-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 2px 12px}
+.program-browser-head>span{font-size:13px;color:var(--label-2);font-variant-numeric:tabular-nums}
+.program-goals,.program-sort{margin-bottom:10px}
+.program-sort{margin-top:-2px}
+.program-row{width:100%;text-align:start;color:var(--label)}
+.program-users{font-size:12px;color:var(--label-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.program-more{width:100%;margin-top:12px}
+.program-note{margin:12px 4px}
+.program-skeleton{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:26px}
+.program-skeleton i{height:146px;border-radius:var(--r-lg);background:var(--surface);animation:program-pulse 1.2s ease-in-out infinite alternate}
+.program-skeleton i:nth-child(2){animation-delay:.15s}.program-skeleton i:nth-child(3){animation-delay:.3s}
+@keyframes program-pulse{to{background:var(--surface-2)}}
+@media (prefers-reduced-motion:reduce){.program-card{transition:none}.program-skeleton i{animation:none}}
+@media (max-width:480px){.program-skeleton{grid-template-columns:1fr 1fr}.program-skeleton i:last-child{display:none}.program-users{display:none}}
 .item{
   display:flex;align-items:center;gap:12px;background:var(--surface);
   border-radius:var(--r-card);padding:10px 12px;min-height:60px;

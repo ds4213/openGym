@@ -14,6 +14,7 @@ test('catalog filters source and searchable metadata', () => {
   const matches = listPrograms({ q: 'boring but strong', source: 'community', limit: '500' })
   assert.ok(matches.total > 0)
   assert.ok(matches.programs.every(program => program.source === 'community'))
+  assert.match(matches.programs[0].createdAt, /^20\d\d-/)
 })
 
 test('catalog validates paging and returns a program by id', () => {

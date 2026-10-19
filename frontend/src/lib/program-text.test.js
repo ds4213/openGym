@@ -12,6 +12,7 @@ describe('programText', () => {
   it('follows the openGym language for Chinese', () => {
     _setLangState('zh', {}, null, null, true, false)
     expect(programText('{0} KeyLifts programs', 498)).toBe('498 个 KeyLifts 训练计划')
+    expect(programText('New discoveries')).toBe('新发现')
     _setLangState('zh-TW', {}, null, null, true, false)
     expect(programText('Community')).toBe('社群')
   })
