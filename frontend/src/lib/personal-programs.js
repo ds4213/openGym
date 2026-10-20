@@ -2,6 +2,14 @@ import { uid } from './format.js'
 
 const clone = value => JSON.parse(JSON.stringify(value))
 
+export function blankPersonalProgram(now = Date.now(), id = 'p' + uid()) {
+  return {
+    id, name: 'My program', source: 'personal', detailStatus: 'full', personalRevision: 0,
+    savedAt: new Date(now).toISOString(), _ts: now,
+    schedule: [{ id: 'pw' + uid(), number: 1, days: [{ id: 'pd' + uid(), name: 'Day 1', week: 1, exercises: [] }] }],
+  }
+}
+
 export function copyProgramTemplate(program, now = Date.now(), id = 'p' + uid()) {
   const copy = clone(program)
   return {

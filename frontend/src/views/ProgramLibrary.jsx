@@ -298,6 +298,7 @@ export default function ProgramLibrary() {
     <Segmented className="program-tabs" value={tab} onChange={chooseTab} options={[
       { value: 'discover', label: p('Discover') }, { value: 'community', label: p('Community') }, { value: 'mine', label: p('My Plans') },
     ]} />
+    {tab === 'mine' && <Button className="program-build" variant="primary" icon="plus" onClick={() => nav('/programs/new/edit')}>{p('Build my own')}</Button>}
     <div className="program-search-row">
       <SearchField value={query} onChange={event => { setQuery(event.target.value); setShown(40) }} onClear={() => setQuery('')} placeholder={p('Search programs…')} />
       <Button className={'program-filter-toggle' + (activeFilterCount ? ' active' : '')} icon="slider" onClick={() => setShowFilters(value => !value)} aria-label={p('Filters')} aria-expanded={showFilters}>{p('Filters')}{activeFilterCount ? ` · ${activeFilterCount}` : ''}</Button>

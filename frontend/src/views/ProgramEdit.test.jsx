@@ -27,6 +27,16 @@ beforeEach(() => {
 afterEach(() => { act(() => root.unmount()); host.remove() })
 
 describe('personal program editor', () => {
+  it('opens a blank unsaved program and requires an exercise before saving', () => {
+    act(() => root.render(<MemoryRouter initialEntries={['/programs/new/edit']}><Routes>
+      <Route path="/programs/:id/edit" element={<ProgramEdit />} />
+    </Routes></MemoryRouter>))
+    expect(host.textContent).toContain('Build my own')
+    expect(host.textContent).toContain('Every training day needs at least one exercise.')
+    expect(Object.keys(useStore.getState().S.personalPrograms)).toEqual(['p1'])
+    expect([...host.querySelectorAll('button')].find(button => button.textContent.includes('Save changes')).disabled).toBe(true)
+  })
+
   it('saves a renamed prescription as a new version and returns to its detail', () => {
     act(() => root.render(<MemoryRouter initialEntries={['/programs/p1/edit']}><Routes>
       <Route path="/programs/:id/edit" element={<ProgramEdit />} />

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { copyProgramTemplate, personalProgramsOf, savePersonalProgramDraft, validatePersonalProgram } from './personal-programs.js'
+import { blankPersonalProgram, copyProgramTemplate, personalProgramsOf, savePersonalProgramDraft, validatePersonalProgram } from './personal-programs.js'
 
 describe('personal program copies', () => {
   it('pins the source version and deep-copies its prescription', () => {
@@ -33,5 +33,13 @@ describe('personal program copies', () => {
     expect(validatePersonalProgram({ name: '', schedule: [] })).toBe('Give this program a name.')
     expect(validatePersonalProgram({ name: 'Plan', schedule: [{ days: [] }] })).toBe('Every week needs at least one training day.')
     expect(() => savePersonalProgramDraft({ id: 'p1', source: 'official' }, { id: 'p1', name: 'Plan', schedule: [] })).toThrow('Only a matching personal program can be edited.')
+  })
+
+  it('starts a blank personal program without saving an invalid library entry', () => {
+    const blank = blankPersonalProgram(1000, 'p1')
+    expect(blank).toMatchObject({ id: 'p1', name: 'My program', source: 'personal', personalRevision: 0, detailStatus: 'full' })
+    expect(blank.schedule).toHaveLength(1)
+    expect(blank.schedule[0].days[0].exercises).toEqual([])
+    expect(validatePersonalProgram(blank)).toBe('Every training day needs at least one exercise.')
   })
 })

@@ -6,7 +6,7 @@ import { exerciseNameFor } from '../lib/i18n.js'
 import { programText as p } from '../lib/program-text.js'
 import { uid } from '../lib/format.js'
 import { EXIDX } from '../lib/exercises.js'
-import { savePersonalProgramDraft, validatePersonalProgram } from '../lib/personal-programs.js'
+import { blankPersonalProgram, savePersonalProgramDraft, validatePersonalProgram } from '../lib/personal-programs.js'
 import { useStore } from '../store/useStore.js'
 
 const copy = value => structuredClone(value)
@@ -35,15 +35,16 @@ function duplicateWeek(week) {
 export default function ProgramEdit() {
   const nav = useNavigate()
   const { id } = useParams()
+  const creating = id === 'new'
   const program = useStore(state => state.S.personalPrograms?.[id])
   const unit = useStore(state => state.S.unit)
   const update = useStore(state => state.update)
-  const [draft, setDraft] = useState(() => program ? copy(program) : null)
+  const [draft, setDraft] = useState(() => creating ? blankPersonalProgram() : program ? copy(program) : null)
   const [weekIndex, setWeekIndex] = useState(0)
   const [saveError, setSaveError] = useState('')
   const validation = useMemo(() => validatePersonalProgram(draft), [draft])
 
-  if (!program || program.deleted || !draft) return <Navigate to="/programs" replace />
+  if ((!creating && (!program || program.deleted)) || !draft) return <Navigate to="/programs" replace />
   const week = draft.schedule[weekIndex]
   const edit = fn => {
     setSaveError('')
@@ -63,7 +64,7 @@ export default function ProgramEdit() {
   }
   const save = () => {
     try {
-      const saved = savePersonalProgramDraft(program, draft)
+      const saved = savePersonalProgramDraft(program || draft, draft)
       update(state => { state.personalPrograms = { ...(state.personalPrograms || {}), [saved.id]: saved } })
       nav('/programs/' + encodeURIComponent(saved.id))
     } catch (error) { setSaveError(error.message) }
@@ -71,8 +72,8 @@ export default function ProgramEdit() {
 
   return <div className="narrow programs-page program-editor">
     <div className="hdr">
-      <div><h1>{p('Edit program')}</h1><div className="sub">{p('Changes affect future cycles only.')}</div></div>
-      <Button size="sm" onClick={() => nav('/programs/' + encodeURIComponent(id))}>{p('Cancel')}</Button>
+      <div><h1>{p(creating ? 'Build my own' : 'Edit program')}</h1><div className="sub">{p(creating ? 'Create a multi-week program from scratch.' : 'Changes affect future cycles only.')}</div></div>
+      <Button size="sm" onClick={() => nav(creating ? '/programs' : '/programs/' + encodeURIComponent(id))}>{p('Cancel')}</Button>
     </div>
     <label className="program-edit-field"><span>{p('Program name')}</span><TextField value={draft.name} maxLength={100} onChange={event => edit(next => { next.name = event.target.value })} /></label>
     <div className="program-schedule-head"><h2>{p('Workout schedule')}</h2><span>{p('{0} weeks', draft.schedule.length)}</span></div>
