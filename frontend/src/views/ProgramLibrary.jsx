@@ -174,6 +174,7 @@ function ProgramDetail({ id }) {
     <Section title={p('Program details')}>{facts.map(([label, value]) => <Row key={label} title={label} value={String(value)} />)}</Section>
     {program.detailStatus === 'full' && program.source !== 'personal' && <Button className="program-copy" icon="plus" onClick={copy}>{p('Copy to My Plans')}</Button>}
     {program.source === 'personal' && program.sourceProgram && <p className="small dim program-origin">{p('Copied from {0}', program.sourceProgram.source === 'official' ? p('Official') : p('Community'))} · {p('Your copied programs are independent from future source updates.')}</p>}
+    {program.source === 'personal' && <Button className="program-copy" icon="pencil" onClick={() => nav('/programs/' + encodeURIComponent(program.id) + '/edit')}>{p('Edit program')}</Button>}
     {program.source === 'personal' && program.detailStatus === 'full' && <section className="program-start">
       {cycle?.status === 'active' || cycle?.status === 'paused' ? <>
         <div className="program-schedule-head"><h2>{p('Current cycle')}</h2><span>{p('Week {0}', cycle.currentWeek + 1)} · {p('Day {0}', cycle.currentDay + 1)}</span></div>

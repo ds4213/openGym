@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { copyProgramTemplate, personalProgramsOf } from './personal-programs.js'
+import { copyProgramTemplate, personalProgramsOf, savePersonalProgramDraft, validatePersonalProgram } from './personal-programs.js'
 
 describe('personal program copies', () => {
   it('pins the source version and deep-copies its prescription', () => {
@@ -16,5 +16,22 @@ describe('personal program copies', () => {
       b: { id: 'b', name: 'B', savedAt: '2026-02-01' },
       c: { id: 'c', name: 'C', deleted: true, _ts: 3 },
     } }).map(program => program.id)).toEqual(['b', 'a'])
+  })
+
+  it('saves an edited prescription as a new personal version without changing the source copy', () => {
+    const original = { id: 'p1', name: 'Original', source: 'personal', personalRevision: 2, schedule: [{ number: 9, days: [{ id: 'd1', name: 'Day', exercises: [{ id: 'e1', name: 'Squat', sets: [{ id: 's1', reps: 5, order: 8 }] }] }] }] }
+    const draft = structuredClone(original)
+    draft.name = '  My program  '
+    draft.schedule[0].days[0].exercises[0].sets[0].reps = 8
+    const saved = savePersonalProgramDraft(original, draft, 1000)
+    expect(saved).toMatchObject({ name: 'My program', weeks: 1, daysPerWeek: 1, workoutCount: 1, personalRevision: 3, contentVersion: 'personal-3-1000', _ts: 1000 })
+    expect(saved.schedule[0]).toMatchObject({ number: 1, days: [{ week: 1, exercises: [{ sets: [{ reps: 8, order: 0 }] }] }] })
+    expect(original.name).toBe('Original')
+  })
+
+  it('refuses incomplete personal schedules', () => {
+    expect(validatePersonalProgram({ name: '', schedule: [] })).toBe('Give this program a name.')
+    expect(validatePersonalProgram({ name: 'Plan', schedule: [{ days: [] }] })).toBe('Every week needs at least one training day.')
+    expect(() => savePersonalProgramDraft({ id: 'p1', source: 'official' }, { id: 'p1', name: 'Plan', schedule: [] })).toThrow('Only a matching personal program can be edited.')
   })
 })

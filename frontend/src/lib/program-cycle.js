@@ -26,6 +26,7 @@ for (const exercise of CATALOGUE) {
 export const programExerciseKey = exercise => exercise?.referenceExerciseId || clean(exercise?.name || exercise?.exerciseName)
 
 export function resolveProgramExercise(exercise, mappings = {}) {
+  if (exercise?.exerciseId) return exercise.exerciseId
   const mapped = mappings?.[programExerciseKey(exercise)]
   if (mapped?.exerciseId && !mapped.deleted) return mapped.exerciseId
   const name = clean(exercise?.name || exercise?.exerciseName)

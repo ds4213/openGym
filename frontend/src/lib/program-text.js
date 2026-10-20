@@ -38,6 +38,13 @@ const zh = {
   'Set the Training Max used to calculate this cycle. It stays separate from your estimated 1RM.': '设置本周期计算重量所用的训练最大值；它与估算 1RM 分开保存。',
   'Map every exercise to openGym before starting this program.': '开始计划前，需要先把每个动作关联到 openGym 动作。',
   'Finish the current workout first': '请先完成当前训练', 'Create cycle and start Day 1': '创建周期并开始第 1 天',
+  'Edit program': '编辑计划', 'Changes affect future cycles only.': '修改只影响以后开始的周期。', Cancel: '取消',
+  'Program name': '计划名称', 'Duplicate week': '复制本周', 'Remove week': '删除本周', 'Day name': '训练日名称',
+  'Remove day': '删除训练日', 'Replace {0}': '替换 {0}', 'Replace exercise': '替换动作', 'Remove exercise': '删除动作',
+  Reps: '次数', 'Remove set': '删除组', 'Add set': '添加组', 'Add exercise': '添加动作', 'Add training day': '添加训练日',
+  'Save changes': '保存修改', Exercise: '动作', 'Give this program a name.': '请填写计划名称。', 'Add at least one week.': '请至少添加一周。',
+  'Every week needs at least one training day.': '每周至少需要一个训练日。', 'Every training day needs at least one exercise.': '每个训练日至少需要一个动作。',
+  'Every exercise needs at least one set.': '每个动作至少需要一组。',
 }
 
 const zhTW = {
@@ -78,6 +85,13 @@ const zhTW = {
   'Set the Training Max used to calculate this cycle. It stays separate from your estimated 1RM.': '設定本週期計算重量所用的訓練最大值；它與估算 1RM 分開儲存。',
   'Map every exercise to openGym before starting this program.': '開始計畫前，需要先把每個動作關聯到 openGym 動作。',
   'Finish the current workout first': '請先完成目前訓練', 'Create cycle and start Day 1': '建立週期並開始第 1 天',
+  'Edit program': '編輯計畫', 'Changes affect future cycles only.': '修改只影響以後開始的週期。', Cancel: '取消',
+  'Program name': '計畫名稱', 'Duplicate week': '複製本週', 'Remove week': '刪除本週', 'Day name': '訓練日名稱',
+  'Remove day': '刪除訓練日', 'Replace {0}': '替換 {0}', 'Replace exercise': '替換動作', 'Remove exercise': '刪除動作',
+  Reps: '次數', 'Remove set': '刪除組', 'Add set': '新增組', 'Add exercise': '新增動作', 'Add training day': '新增訓練日',
+  'Save changes': '儲存修改', Exercise: '動作', 'Give this program a name.': '請填寫計畫名稱。', 'Add at least one week.': '請至少新增一週。',
+  'Every week needs at least one training day.': '每週至少需要一個訓練日。', 'Every training day needs at least one exercise.': '每個訓練日至少需要一個動作。',
+  'Every exercise needs at least one set.': '每個動作至少需要一組。',
 }
 
 export function programText(key, ...values) {
