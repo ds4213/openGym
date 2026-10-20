@@ -188,7 +188,7 @@ function ProgramDetail({ id }) {
       <Button size="sm" icon="chevronLeft" onClick={() => nav('/programs')}>{p('Programs')}</Button>
     </div>
     <Section title={p('Program details')}>{facts.map(([label, value]) => <Row key={label} title={label} value={String(value)} />)}</Section>
-    {program.detailStatus === 'full' && program.source !== 'personal' && <Button className="program-copy" icon="plus" onClick={copy}>{p('Copy to My Plans')}</Button>}
+    {program.detailStatus === 'full' && program.source !== 'personal' && <Button className="program-copy" icon="plus" onClick={copy}>{p('Copy to My Programs')}</Button>}
     {program.source === 'personal' && program.sourceProgram && <p className="small dim program-origin">{p('Copied from {0}', program.sourceProgram.source === 'official' ? p('Official') : p('Community'))} · {p('Your copied programs are independent from future source updates.')}</p>}
     {program.source === 'personal' && <Button className="program-copy" icon="pencil" onClick={() => nav('/programs/' + encodeURIComponent(program.id) + '/edit')}>{p('Edit program')}</Button>}
     {program.source === 'personal' && program.detailStatus === 'full' && <section className="program-start">
@@ -233,7 +233,7 @@ function ProgramDetail({ id }) {
     </section>}
     {!!program.compatibilityIssues?.length && <p className="program-compat-warning"><Icon name="warning" /> {p('Some source fields need verification before this program can be started automatically.')}</p>}
     {program.source !== 'personal' && <p className="small dim program-note">{program.detailStatus === 'full'
-      ? p('This is the source prescription. Copy and Start Program come next so your active cycle stays independent from source updates.')
+      ? p('Copy this program to edit it. When you start it, the program chooses each next workout; it does not create routines.')
       : program.detailStatus === 'invalid'
         ? p('The saved workout details could not be read. Rebuild the program cache before starting this program.')
         : p('Only catalogue information is available for this program right now.')}</p>}
@@ -310,9 +310,9 @@ export default function ProgramLibrary() {
   if (id) return <ProgramDetail id={id} />
 
   return <div className="narrow programs-page">
-    <div className="hdr program-title"><div><h1>{p('Programs')}</h1><div className="sub">{counts ? p('{0} KeyLifts programs', counts.total) : p('KeyLifts program catalogue')}</div></div></div>
+    <div className="hdr program-title"><div><h1>{p('Program Library')}</h1><div className="sub">{p('Multi-week programs that choose each next workout')}</div></div></div>
     <Segmented className="program-tabs" value={tab} onChange={chooseTab} options={[
-      { value: 'discover', label: p('Discover') }, { value: 'community', label: p('Community') }, { value: 'mine', label: p('My Plans') },
+      { value: 'discover', label: p('Discover') }, { value: 'community', label: p('Community') }, { value: 'mine', label: p('My Programs') },
     ]} />
     {tab === 'mine' && <Button className="program-build" variant="primary" icon="plus" onClick={() => nav('/programs/new/edit')}>{p('Build my own')}</Button>}
     <div className="program-search-row">
@@ -340,7 +340,7 @@ export default function ProgramLibrary() {
     </div>}
 
     {(counts || tab === 'mine') && <section className="program-browser">
-      <div className="program-browser-head"><h2>{tab === 'community' ? p('Community programs') : tab === 'mine' ? p('My Plans') : p('Browse all')}</h2><span>{p('{0} programs', filtered.length)}</span></div>
+      <div className="program-browser-head"><h2>{tab === 'community' ? p('Community programs') : tab === 'mine' ? p('My Programs') : p('Browse all')}</h2><span>{p('{0} programs', filtered.length)}</span></div>
       {tab === 'community' && <div className="chips program-sort">
         {[['popular', p('Most popular')], ['new', p('Newest')], ['az', p('A–Z')]].map(([value, label]) =>
           <button key={value} className={'chip nocap' + (sort === value ? ' on' : '')} onClick={() => { setSort(value); setShown(40) }}>{label}</button>)}

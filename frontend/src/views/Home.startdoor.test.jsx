@@ -8,14 +8,14 @@ import React, { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createRoot } from 'react-dom/client'
 import { useStore } from '../store/useStore.js'
-import { startFlow } from '../sheets.jsx'
+import { continueProgram, startFlow } from '../sheets.jsx'
 import Home from './Home.jsx'
 
 const nav = vi.fn()
 vi.mock('react-router-dom', () => ({ useNavigate: () => nav }))
 vi.mock('../sheets.jsx', () => ({
   starterPlanSheet: vi.fn(), bwSheet: vi.fn(), goalSheet: vi.fn(), dayOverrideSheet: vi.fn(),
-  calendarSheet: vi.fn(), startFlow: vi.fn(), bwDeltaColor: () => '', weighInsSheet: vi.fn(),
+  calendarSheet: vi.fn(), startFlow: vi.fn(), continueProgram: vi.fn(), bwDeltaColor: () => '', weighInsSheet: vi.fn(),
 }))
 
 const routines = [{ id: 'r1', name: 'Push', emoji: null, ex: [{ id: '0025' }] }]
@@ -23,7 +23,7 @@ const routines = [{ id: 'r1', name: 'Push', emoji: null, ex: [{ id: '0025' }] }]
 let host, root
 beforeEach(() => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
-  nav.mockClear(); startFlow.mockClear()
+  nav.mockClear(); startFlow.mockClear(); continueProgram.mockClear()
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)
@@ -82,5 +82,20 @@ describe('Home — the way to the Start screen when a plan already owns today', 
     const row = host.querySelector('.today-row')
     expect(row.querySelector('.ttl').textContent).toBe('Push (in progress)')
     expect(row.querySelector('.tag').textContent).toBe('Resume')
+  })
+
+  it('lets an active multi-week program control the next workout instead of today’s routine', () => {
+    const cycle = {
+      id: 'c1', programName: '5/3/1 Beginner', status: 'active', currentWeek: 0, currentDay: 0,
+      startedAt: '2026-10-20T00:00:00Z', schedule: [{ number: 1, days: [{ name: 'Squat Day', exercises: [] }] }],
+    }
+    setS({ activeProgramCycleId: cycle.id, programCycles: { [cycle.id]: cycle } })
+    mount()
+    const row = host.querySelector('.today-row')
+    expect(row.querySelector('.lbl2').textContent).toBe('Active Program')
+    expect(row.querySelector('.ttl').textContent).toBe('5/3/1 Beginner · Squat Day')
+    act(() => { row.dispatchEvent(new MouseEvent('click', { bubbles: true })) })
+    expect(continueProgram).toHaveBeenCalledWith('c1')
+    expect(startFlow).not.toHaveBeenCalled()
   })
 })

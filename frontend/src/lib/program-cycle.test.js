@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { advanceProgramCycle, buildProgramWorkout, createProgramCycle, programExerciseRequirements, resolveProgramExercise, trainingMaxRequirements } from './program-cycle.js'
+import { activeProgramCycle, advanceProgramCycle, buildProgramWorkout, createProgramCycle, programExerciseRequirements, resolveProgramExercise, trainingMaxRequirements } from './program-cycle.js'
 
 const exercise = (name, referenceExerciseId, percentage = .65) => ({ name, referenceExerciseId, sets: [{ type: 'warmup', reps: 5, percentage: .4 }, { type: 'regular', reps: 5, percentage }] })
 const program = {
@@ -11,6 +11,14 @@ const program = {
 }
 
 describe('program cycle', () => {
+  it('finds the selected active program and recovers from a stale selected id', () => {
+    const older = { id: 'older', status: 'active', startedAt: '2026-01-01' }
+    const newer = { id: 'newer', status: 'active', startedAt: '2026-02-01' }
+    const state = { activeProgramCycleId: 'older', programCycles: { older, newer } }
+    expect(activeProgramCycle(state)).toBe(older)
+    expect(activeProgramCycle({ ...state, activeProgramCycleId: 'missing' })).toBe(newer)
+  })
+
   it('maps common KeyLifts lifts and requires one TM per referenced exercise', () => {
     expect(resolveProgramExercise({ name: 'Overhead • Press' })).toBe('1162')
     expect(resolveProgramExercise({ name: 'Romanian Deadlift (Barbell)' })).toBe('0085')

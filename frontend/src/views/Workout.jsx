@@ -26,7 +26,7 @@ import WorkoutThumb, { hasWorkoutMedia } from '../components/WorkoutThumb.jsx'
 import { workoutSettingsSheet } from '../components/WorkoutSettingsSheet.jsx'
 import { durationSheet } from '../components/DurationWheel.jsx'
 import { REST_MAX, fmtRest } from '../lib/duration.js'
-import { startFlow, exercisePicker, exConfigSheet, exerciseDetailSheet, finishWorkout, exitWorkoutEdit, workoutCompleteSheet, confirmSheet, exerciseNoteSheet, sessionNoteSheet, renameWorkoutSheet, swapActiveWorkoutExercise, barWeightSheet, menuSheet, effortPickerSheet, exerciseHistorySheet, addRoutineToSessionSheet, finishWorkoutSheet } from '../sheets.jsx'
+import { startFlow, continueProgram, exercisePicker, exConfigSheet, exerciseDetailSheet, finishWorkout, exitWorkoutEdit, workoutCompleteSheet, confirmSheet, exerciseNoteSheet, sessionNoteSheet, renameWorkoutSheet, swapActiveWorkoutExercise, barWeightSheet, menuSheet, effortPickerSheet, exerciseHistorySheet, addRoutineToSessionSheet, finishWorkoutSheet } from '../sheets.jsx'
 import { afterScrollRestore, scrollRestorePending } from '../components/Modals.jsx'
 import { effortColor } from '../lib/effort.js'
 import Elapsed from '../components/Elapsed.jsx'
@@ -47,6 +47,7 @@ import { MUSCLE_NAME } from '../lib/muscles.js'
 import FocusView from './FocusView.jsx'
 import { withMeaning, historyAs, dbLoadFor, entryDbLoad, bellsIn, ownedWeightsFor, stepOwned } from '../lib/dumbbells.js'
 import { programText as programP } from '../lib/program-text.js'
+import { activeProgramCycle, currentProgramDay } from '../lib/program-cycle.js'
 
 // How long after a key starts a hold the same key is not yet its "Done" (#133). A USB button
 // that bounces, or a double press, sends two presses a moment apart: the first starts the hold,
@@ -54,7 +55,7 @@ import { programText as programP } from '../lib/program-text.js'
 const HOLD_KEY_GRACE_MS = 1500
 
 /* ---------- start chooser (no active workout) ---------- */
-function StartChooser() {
+export function StartChooser() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
   const todayIds = effectiveRoutineIds(S, todayISO())
@@ -63,10 +64,21 @@ function StartChooser() {
   const todayOvr = S.dayPlan[todayISO()] !== undefined && pinState(S, S.dayPlan[todayISO()]) !== 'done' // a fulfilled pin is no override
   const idSet = new Set(todayIds)
   const others = S.routines.filter(r => !idSet.has(r.id))
+  const cycle = activeProgramCycle(S)
+  const programDay = currentProgramDay(cycle)
   return <div className="narrow">
-    <div className="hdr"><div><h1>{t('Start workout')}</h1><div className="sub">{t(DAYN[new Date().getDay()])} · {todayRoutines.length ? t('today is {0}', todayName) : t('rest day, but no one’s stopping you')}</div></div></div>
+    <div className="hdr"><div><h1>{t('Start workout')}</h1><div className="sub">{cycle ? programP('Your active program chooses the next workout') : `${t(DAYN[new Date().getDay()])} · ${todayRoutines.length ? t('today is {0}', todayName) : t('rest day, but no one’s stopping you')}`}</div></div></div>
+    {cycle && programDay && <div className="card" style={{ borderColor: 'var(--acc)' }}>
+      <h2 className="accent">{programP('Active Program')}</h2>
+      <div className="row between" style={{ marginBottom: 12 }}>
+        <div><strong>{cycle.programName}</strong><div className="small dim">{programP('Week {0}', cycle.currentWeek + 1)} · {programDay.day.name || programP('Day {0}', cycle.currentDay + 1)}</div></div>
+        <Icon name="calendar" />
+      </div>
+      <Button variant="primary" icon="play" onClick={() => continueProgram(cycle.id)}>{programP('Start next workout')}</Button>
+      <p className="small dim" style={{ marginBottom: 0 }}>{programP('This program controls your next workout. Routines below are optional alternatives.')}</p>
+    </div>}
     {todayRoutines.length > 0 && <div className="card" style={{ borderColor: 'var(--acc)' }}>
-      <h2 className="accent">{t("Today's plan")}{todayOvr ? ' · ' + t('rescheduled') : ''}</h2>
+      <h2 className="accent">{cycle ? programP('Scheduled routines') : t("Today's plan")}{todayOvr ? ' · ' + t('rescheduled') : ''}</h2>
       <div className="row between" style={{ marginBottom: 12 }}>
         <div><div className="big">{todayName}</div><div className="muted small">{exCount(todayRoutines.reduce((n, r) => n + r.ex.length, 0))}</div></div>
         <span className="lrow-i" style={{ width: 38, height: 38, borderRadius: 9, fontSize: 22 }}><Icon name={glyphOf(todayRoutines[0].emoji)} /></span>

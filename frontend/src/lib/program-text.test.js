@@ -14,6 +14,8 @@ describe('programText', () => {
     expect(programText('{0} KeyLifts programs', 498)).toBe('498 个 KeyLifts 训练计划')
     expect(programText('New discoveries')).toBe('新发现')
     expect(programText('Clear all filters')).toBe('清除全部筛选')
+    expect(programText('Program Library')).toBe('计划库')
+    expect(programText('My Programs')).toBe('我的训练计划')
     _setLangState('zh-TW', {}, null, null, true, false)
     expect(programText('Community')).toBe('社群')
   })

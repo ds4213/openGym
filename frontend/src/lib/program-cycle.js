@@ -214,3 +214,11 @@ export function advanceProgramCycle(cycle, now = Date.now()) {
 export const cycleForProgram = (state, programId) => Object.values(state?.programCycles || {})
   .filter(cycle => cycle && !cycle.deleted && cycle.programId === programId)
   .sort((a, b) => (b.startedAt || '').localeCompare(a.startedAt || ''))[0] || null
+
+export function activeProgramCycle(state) {
+  const selected = state?.programCycles?.[state.activeProgramCycleId]
+  if (selected?.status === 'active' && !selected.deleted) return selected
+  return Object.values(state?.programCycles || {})
+    .filter(cycle => cycle && !cycle.deleted && cycle.status === 'active')
+    .sort((a, b) => (b.startedAt || '').localeCompare(a.startedAt || ''))[0] || null
+}
