@@ -35,7 +35,7 @@ import { effectiveRoutineId } from './queue.js';
 import { stampPut } from './sync-stamps.js';
 import { atomicWrite as durableWrite } from './durable.js';
 import { excusedOn, nudgeFor, nudgeWindowOpen, toneOf } from './nudge.js';
-import { listPrograms, programById } from './program-catalog.js';
+import { listPrograms, programDetailById } from './program-catalog.js';
 
 const PORT = +(process.env.PORT || 3000);
 const DATA = process.env.DATA_DIR || '/data';
@@ -1958,7 +1958,7 @@ const routes = {
   'GET /api/program': async (req, res) => {
     const id = new URL(req.url, 'http://x').searchParams.get('id');
     if (!id) return json(res, 400, { error: 'id is required' });
-    const program = programById(id);
+    const program = programDetailById(id);
     if (!program) return json(res, 404, { error: 'program not found' });
     json(res, 200, { program });
   },

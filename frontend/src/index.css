@@ -532,6 +532,15 @@ h4.sec{
 .program-users{font-size:12px;color:var(--label-2);white-space:nowrap;font-variant-numeric:tabular-nums}
 .program-more{width:100%;margin-top:12px}
 .program-note{margin:12px 4px}
+.program-schedule{margin-top:28px}
+.program-schedule-head,.program-day-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.program-schedule-head{margin:0 2px 10px}.program-schedule-head h2{font-size:22px;margin:0}.program-schedule-head span,.program-day-head span{font-size:12px;color:var(--label-2)}
+.program-week-picker{margin:0 -16px 14px;padding:2px 16px 4px;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}.program-week-picker::-webkit-scrollbar{display:none}.program-week-picker .chip{flex:0 0 auto}
+.program-days{display:flex;flex-direction:column;gap:12px}.program-day{background:var(--surface);border-radius:var(--r-lg);padding:14px}.program-day-head{padding:1px 2px 11px;border-bottom:1px solid var(--separator)}
+.program-exercises{display:flex;flex-direction:column}.program-exercise{padding:12px 2px 11px}.program-exercise+.program-exercise{border-top:1px solid var(--separator)}
+.program-exercise>div{display:flex;align-items:baseline;justify-content:space-between;gap:10px}.program-exercise>div>strong{font-size:15px}.program-exercise>div>span{font-size:11px;color:var(--label-2);text-align:end}
+.program-exercise p{font-size:13px;color:var(--label-2);line-height:1.45;margin:5px 0 0}.program-exercise small{display:block;color:var(--label-3);line-height:1.4;margin-top:5px}
+.program-compat-warning{display:flex;gap:8px;align-items:flex-start;color:var(--orange);background:color-mix(in srgb,var(--orange) 12%,var(--surface));border-radius:var(--r-card);padding:11px 12px;font-size:13px;line-height:1.4;margin:12px 0}
 .program-skeleton{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:26px}
 .program-skeleton i{height:146px;border-radius:var(--r-lg);background:var(--surface);animation:program-pulse 1.2s ease-in-out infinite alternate}
 .program-skeleton i:nth-child(2){animation-delay:.15s}.program-skeleton i:nth-child(3){animation-delay:.3s}

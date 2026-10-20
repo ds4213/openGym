@@ -55,6 +55,41 @@ export function discoveryGroups(programs) {
   }
 }
 
+const compactNumber = value => Number.isInteger(Number(value)) ? String(Number(value)) : String(Number(value).toFixed(1))
+
+function oneSetText(set) {
+  const parts = []
+  const reps = Number(set.reps)
+  const min = Number(set.minRepsProgression)
+  const max = Number(set.maxReps)
+  if (min > 0 && max >= min) parts.push(`${min}–${max} ${p('reps')}`)
+  else if (reps > 0) parts.push(`${compactNumber(reps)} ${p('reps')}`)
+  else if (Number(set.duration) > 0) parts.push(`${compactNumber(set.duration)} ${p('seconds')}`)
+  else if (Number(set.distance) > 0) parts.push(`${compactNumber(set.distance)} ${set.distanceUnits || ''}`.trim())
+  if (Number(set.percentage) > 0) parts.push(`@ ${compactNumber(Number(set.percentage) * 100)}% TM`)
+  else if (Number(set.weight) > 0) parts.push(`@ ${compactNumber(set.weight)}`)
+  if (Number(set.repsInReserve) >= 0 && set.repsInReserve !== null && set.repsInReserve !== '') parts.push(`RIR ${compactNumber(set.repsInReserve)}`)
+  if (Number(set.ratePerceivedExertion) > 0) parts.push(`RPE ${compactNumber(set.ratePerceivedExertion)}`)
+  const type = String(set.type || '').toLocaleLowerCase()
+  if (type && type !== 'regular') parts.push(p(type === 'pr' ? 'PR set' : type[0].toLocaleUpperCase() + type.slice(1)))
+  return parts.join(' · ') || p('Set')
+}
+
+export function setPrescription(sets = []) {
+  const groups = []
+  for (const set of sets) {
+    const text = oneSetText(set)
+    const last = groups.at(-1)
+    if (last?.text === text) last.count++
+    else groups.push({ text, count: 1 })
+  }
+  return groups.map(group => group.count > 1 ? `${group.count} × ${group.text}` : group.text).join(' · ')
+}
+
+export function programExerciseName(exercise) {
+  return exercise.name || exercise.exerciseName || exercise.sets?.find(set => set.exerciseName)?.exerciseName || (exercise.category ? p('Choose {0}', exercise.category) : exercise.recommendation) || p('Assistance exercise')
+}
+
 const sourceName = source => source === 'official' ? p('Official') : p('Community')
 const familyName = family => family === '531' ? '5/3/1' : family
 const programMeta = program => [familyName(program.family), program.weeks && p('{0} weeks', program.weeks), program.daysPerWeek && p('{0} days/week', program.daysPerWeek)].filter(Boolean).join(' · ')
@@ -63,11 +98,12 @@ function ProgramDetail({ id }) {
   const nav = useNavigate()
   const [program, setProgram] = useState(null)
   const [error, setError] = useState('')
+  const [selectedWeek, setSelectedWeek] = useState(1)
 
   useEffect(() => {
     let current = true
     api('/api/program?id=' + encodeURIComponent(id))
-      .then(result => { if (current) setProgram(result.program) })
+      .then(result => { if (current) { setProgram(result.program); setSelectedWeek(result.program.schedule?.[0]?.number || 1) } })
       .catch(reason => { if (current) setError(reason.message) })
     return () => { current = false }
   }, [id])
@@ -81,6 +117,7 @@ function ProgramDetail({ id }) {
     [p('Level'), (program.levels || []).map(level => p(level)).join(', ')],
     [p('Workouts'), program.workoutCount], [p('People using it'), program.userCount],
   ].filter(([, value]) => value !== null && value !== undefined && value !== '')
+  const week = program.schedule?.find(item => item.number === selectedWeek)
 
   return <div className="narrow programs-page">
     <div className="hdr">
@@ -88,9 +125,26 @@ function ProgramDetail({ id }) {
       <Button size="sm" icon="chevronLeft" onClick={() => nav('/programs')}>{p('Programs')}</Button>
     </div>
     <Section title={p('Program details')}>{facts.map(([label, value]) => <Row key={label} title={label} value={String(value)} />)}</Section>
-    <p className="small dim program-note">{program.catalogStatus === 'metadata-only'
-      ? p('Only catalogue information is available for this community program right now.')
-      : p('Workout import and Start Program will be added in the next implementation step.')}</p>
+    {program.detailStatus === 'full' && <section className="program-schedule">
+      <div className="program-schedule-head"><h2>{p('Workout schedule')}</h2><span>{p('{0} workouts', program.workoutCount || 0)}</span></div>
+      <div className="chips program-week-picker" aria-label={p('Choose week')}>
+        {program.schedule.map(item => <button key={item.number} className={'chip nocap' + (item.number === selectedWeek ? ' on' : '')} onClick={() => setSelectedWeek(item.number)}>{p('Week {0}', item.number)}</button>)}
+      </div>
+      <div className="program-days">{week?.days.map((day, dayIndex) => <article className="program-day" key={day.id || dayIndex}>
+        <div className="program-day-head"><strong>{day.name || p('Day {0}', dayIndex + 1)}</strong><span>{p('{0} exercises', day.exercises?.length || 0)}</span></div>
+        <div className="program-exercises">{(day.exercises || []).map((exercise, exerciseIndex) => <div className="program-exercise" key={exercise.id || exerciseIndex}>
+          <div><strong>{programExerciseName(exercise)}</strong><span>{[exercise.type, exercise.category, exercise.superset != null ? p('Superset {0}', exercise.superset) : ''].filter(Boolean).join(' · ')}</span></div>
+          <p>{setPrescription(exercise.sets)}</p>
+          {exercise.recommendation && <small>{exercise.recommendation}</small>}
+        </div>)}</div>
+      </article>)}</div>
+    </section>}
+    {!!program.compatibilityIssues?.length && <p className="program-compat-warning"><Icon name="warning" /> {p('Some source fields need verification before this program can be started automatically.')}</p>}
+    <p className="small dim program-note">{program.detailStatus === 'full'
+      ? p('This is the source prescription. Copy and Start Program come next so your active cycle stays independent from source updates.')
+      : program.detailStatus === 'invalid'
+        ? p('The saved workout details could not be read. Rebuild the program cache before starting this program.')
+        : p('Only catalogue information is available for this program right now.')}</p>
   </div>
 }
 

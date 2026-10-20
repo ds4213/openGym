@@ -1,8 +1,11 @@
 import fs from 'node:fs'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const catalog = JSON.parse(fs.readFileSync(fileURLToPath(new URL('./programs/catalog.json', import.meta.url)), 'utf8'))
 const byId = new Map(catalog.programs.map(program => [program.id, program]))
+const detailsDir = process.env.PROGRAM_DETAILS_DIR || fileURLToPath(new URL('./programs/details', import.meta.url))
+const detailCache = new Map()
 
 export function listPrograms({ q = '', source = '', offset = '0', limit = '100' } = {}) {
   if (source && source !== 'official' && source !== 'community') throw new TypeError('invalid source')
@@ -25,3 +28,21 @@ export function listPrograms({ q = '', source = '', offset = '0', limit = '100' 
 }
 
 export const programById = id => byId.get(id) || null
+
+export function programDetailById(id, directory = detailsDir) {
+  const program = programById(id)
+  if (!program) return null
+  const key = directory + '\0' + id
+  if (detailCache.has(key)) return detailCache.get(key)
+  let result
+  try {
+    const detail = JSON.parse(fs.readFileSync(path.join(directory, id + '.json'), 'utf8'))
+    result = detail?.schemaVersion === 1 && detail.id === id && Array.isArray(detail.schedule)
+      ? { ...program, ...detail, detailStatus: 'full' }
+      : { ...program, detailStatus: 'invalid' }
+  } catch (error) {
+    result = { ...program, detailStatus: error?.code === 'ENOENT' ? 'metadata-only' : 'invalid' }
+  }
+  detailCache.set(key, result)
+  return result
+}

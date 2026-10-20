@@ -20,6 +20,14 @@ const zh = {
   'Recently shared with the community': '社区最近分享的计划',
   'Programs focused on size and hypertrophy': '专注肌肉增长与增肌训练',
   'Programs focused on getting stronger': '专注提升力量的训练计划',
+  'Workout schedule': '训练安排', 'Choose week': '选择周次', 'Week {0}': '第 {0} 周', 'Day {0}': '第 {0} 天',
+  '{0} workouts': '{0} 次训练', '{0} exercises': '{0} 个动作', reps: '次', seconds: '秒', Set: '组',
+  'PR set': 'PR 组', Warmup: '热身', Joker: 'Joker 组', Failure: '力竭组', Drop: '递减组',
+  'Choose {0}': '选择{0}动作', 'Assistance exercise': '辅助动作', 'Superset {0}': '超级组 {0}',
+  'This is the source prescription. Copy and Start Program come next so your active cycle stays independent from source updates.': '这是来源计划的原始处方。下一步会加入复制和开始计划，使进行中的周期不受来源更新影响。',
+  'The saved workout details could not be read. Rebuild the program cache before starting this program.': '已保存的训练详情无法读取。请重新生成计划缓存后再开始。',
+  'Only catalogue information is available for this program right now.': '这个计划目前只有目录信息。',
+  'Some source fields need verification before this program can be started automatically.': '部分来源字段仍需核对，暂时不能自动开始这个计划。',
 }
 
 const zhTW = {
@@ -42,6 +50,14 @@ const zhTW = {
   'Recently shared with the community': '社群最近分享的計畫',
   'Programs focused on size and hypertrophy': '專注肌肉增長與增肌訓練',
   'Programs focused on getting stronger': '專注提升力量的訓練計畫',
+  'Workout schedule': '訓練安排', 'Choose week': '選擇週次', 'Week {0}': '第 {0} 週', 'Day {0}': '第 {0} 天',
+  '{0} workouts': '{0} 次訓練', '{0} exercises': '{0} 個動作', reps: '次', seconds: '秒', Set: '組',
+  'PR set': 'PR 組', Warmup: '熱身', Joker: 'Joker 組', Failure: '力竭組', Drop: '遞減組',
+  'Choose {0}': '選擇{0}動作', 'Assistance exercise': '輔助動作', 'Superset {0}': '超級組 {0}',
+  'This is the source prescription. Copy and Start Program come next so your active cycle stays independent from source updates.': '這是來源計畫的原始處方。下一步會加入複製和開始計畫，使進行中的週期不受來源更新影響。',
+  'The saved workout details could not be read. Rebuild the program cache before starting this program.': '已儲存的訓練詳情無法讀取。請重新產生計畫快取後再開始。',
+  'Only catalogue information is available for this program right now.': '這個計畫目前只有目錄資訊。',
+  'Some source fields need verification before this program can be started automatically.': '部分來源欄位仍需核對，暫時不能自動開始這個計畫。',
 }
 
 export function programText(key, ...values) {

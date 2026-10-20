@@ -5,6 +5,7 @@ media/gif/
 
 # Runtime data — users, passkeys, per-user state, session secret
 data/
+api/programs/details/
 
 # Local config
 .env
@@ -12,6 +13,7 @@ data/
 # Build output / deps
 frontend/dist/
 node_modules/
+__pycache__/
 *.log
 .DS_Store
 node_modules

@@ -1,6 +1,9 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { listPrograms, programById } from '../program-catalog.js'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { listPrograms, programById, programDetailById } from '../program-catalog.js'
 
 test('catalog exposes every active official and community program', () => {
   const result = listPrograms({ limit: '500' })
@@ -25,4 +28,19 @@ test('catalog validates paging and returns a program by id', () => {
   const first = listPrograms({ limit: '1' }).programs[0]
   assert.deepEqual(programById(first.id), first)
   assert.equal(programById('missing'), null)
+})
+
+test('detail cache adds a valid full prescription and reports missing or invalid files', () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'gym-program-details-'))
+  const first = listPrograms({ limit: '1' }).programs[0]
+  const detail = { schemaVersion: 1, id: first.id, name: first.name, contentVersion: 'v1', schedule: [{ number: 1, days: [] }] }
+  fs.writeFileSync(path.join(directory, first.id + '.json'), JSON.stringify(detail))
+  assert.deepEqual(programDetailById(first.id, directory), { ...first, ...detail, detailStatus: 'full' })
+
+  const second = listPrograms({ offset: '1', limit: '1' }).programs[0]
+  assert.equal(programDetailById(second.id, directory).detailStatus, 'metadata-only')
+  const third = listPrograms({ offset: '2', limit: '1' }).programs[0]
+  fs.writeFileSync(path.join(directory, third.id + '.json'), '{}')
+  assert.equal(programDetailById(third.id, directory).detailStatus, 'invalid')
+  fs.rmSync(directory, { recursive: true, force: true })
 })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { discoveryGroups, filterProgramCatalog, goalPresentation, sortPrograms } from './ProgramLibrary.jsx'
+import { discoveryGroups, filterProgramCatalog, goalPresentation, programExerciseName, setPrescription, sortPrograms } from './ProgramLibrary.jsx'
 
 const programs = [
   { name: 'Boring But Big', source: 'official', family: '531', phase: 'Leader', goal: 'Strength', daysPerWeek: 4, levels: [] },
@@ -45,5 +45,21 @@ describe('program discovery ordering', () => {
     expect(groups.popular[0]).toBe(newer)
     expect(groups.muscle).toEqual([official])
     expect(groups.newest[0]).toBe(newer)
+  })
+})
+
+describe('program prescription details', () => {
+  it('compresses matching sets while preserving percentages and special set types', () => {
+    expect(setPrescription([
+      { type: 'regular', reps: 5, percentage: 0.7 },
+      { type: 'regular', reps: 5, percentage: 0.7 },
+      { type: 'pr', reps: 5, percentage: 0.85 },
+    ])).toBe('2 × 5 reps · @ 70% TM · 5 reps · @ 85% TM · PR set')
+  })
+
+  it('names an exercise from the strongest available source and keeps assistance placeholders', () => {
+    expect(programExerciseName({ name: 'Squat', category: 'Legs', sets: [] })).toBe('Squat')
+    expect(programExerciseName({ sets: [{ exerciseName: 'Bench Press' }] })).toBe('Bench Press')
+    expect(programExerciseName({ category: 'Push', sets: [] })).toBe('Choose Push')
   })
 })
