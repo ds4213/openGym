@@ -8,9 +8,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import TabBar from './TabBar.jsx'
 import { DEF, useStore } from '../store/useStore.js'
 
+const route = vi.hoisted(() => ({ pathname: '/home' }))
 vi.mock('react-router-dom', () => ({
   useNavigate: () => () => {},
-  useLocation: () => ({ pathname: '/home' }),
+  useLocation: () => route,
 }))
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
@@ -18,6 +19,7 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true
 let host, root, originalS, originalUser
 
 beforeEach(() => {
+  route.pathname = '/home'
   const store = useStore.getState()
   originalS = store.S
   originalUser = store.user
@@ -58,6 +60,13 @@ describe('the tab bar across a store write', () => {
     act(() => { useStore.getState().update(s => { s.active = { id: 'a', entries: [], cur: 0 } }, false) })
     expect(tabs()[2].className).toBe('start rec')
     expect(tabs()[0].className).toBe('on')
+  })
+
+  it('keeps Programs inside the Plan tab', () => {
+    route.pathname = '/programs/p1/edit'
+    act(() => { root.render(<TabBar onStart={() => {}} />) })
+    expect(tabs()[0].className).toBe('')
+    expect(tabs()[1].className).toBe('on')
   })
 })
 

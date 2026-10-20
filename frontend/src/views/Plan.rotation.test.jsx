@@ -351,6 +351,14 @@ describe('Plan — Schedule extras', () => {
     expect(host.querySelector('.plan-mode')).toBeTruthy()
   })
 
+  it('opens Programs as the third Plan view without changing the remembered routine view', () => {
+    localStorage.setItem('gym_plan_view', 'routines')
+    mount()
+    click([...host.querySelectorAll('.plan-views button')].find(button => button.textContent === 'Programs'))
+    expect(mocks.nav).toHaveBeenCalledWith('/programs')
+    expect(localStorage.getItem('gym_plan_view')).toBe('routines')
+  })
+
   it('one Plan menu holds share, print, import and the starter plans', () => {
     mount()
     click(byLabel('Plan options'))

@@ -135,6 +135,7 @@ export default function Plan() {
     setViewState(v)
     try { localStorage.setItem(PLAN_VIEW_KEY, v) } catch { /* private mode: the view just isn't remembered */ }
   }
+  const chooseView = v => v === 'programs' ? nav('/programs') : setView(v)
 
   /* The Coach's way in from Plan: its own button in the header (a banner over the week was too
      loud, the last entry of the share menu too hidden). Gated by the same predicate every other
@@ -165,14 +166,13 @@ export default function Plan() {
     <div className="hdr">
       <div><h1>{t('Plan')}</h1><div className="sub">{mode === 'rotation' ? t('Your routines in a loop') : t('Your weekly routine')}</div></div>
       <div className="hdr-actions">
-        <Button size="sm" variant="tinted" icon="clipboard" onClick={() => nav('/programs')}>{programText('Programs')}</Button>
         {showCoach && <Button size="sm" variant="tinted" icon="sparkles" onClick={() => nav('/coach')}>{t('Coach')}</Button>}
         <button className="iconbtn" onClick={openMenu} aria-label={t('Plan options')} title={t('Plan options')}><Icon name="share" /></button>
       </div>
     </div>
     <input ref={fileRef} type="file" accept="application/json,.json" onChange={pickFile} hidden />
-    <Segmented className="plan-views" value={view} onChange={setView}
-      options={[{ value: 'schedule', label: t('Schedule') }, { value: 'routines', label: t('Routines') }]} />
+    <Segmented className="plan-views" value={view} onChange={chooseView}
+      options={[{ value: 'schedule', label: t('Schedule') }, { value: 'routines', label: t('Routines') }, { value: 'programs', label: programText('Programs') }]} />
     {view === 'routines'
       ? <Routines S={S} update={update} nav={nav} />
       : <Schedule S={S} update={update} nav={nav} mode={mode} />}
