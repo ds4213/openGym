@@ -34,6 +34,12 @@ describe('program cycle', () => {
     expect(createProgramCycle(custom, {}, 'kg', 1000, 'c2', mappings).exerciseMap).toEqual({ mystery: '0032' })
   })
 
+  it('maps a unique exercise when KeyLifts puts the equipment last', () => {
+    expect(resolveProgramExercise({ name: 'Front Squat (Barbell)' })).toBe('0042')
+    expect(resolveProgramExercise({ name: 'Bench Press (Dumbbell)' })).toBe('0289')
+    expect(resolveProgramExercise({ name: 'Biceps Curl' })).toBeNull()
+  })
+
   it('freezes the schedule and builds the first openGym workout from TM percentages', () => {
     const cycle = createProgramCycle(program, { sq: 100, bp: 80, dl: 120 }, 'kg', 1000, 'c1')
     program.schedule[0].days[0].exercises[0].sets[1].reps = 99

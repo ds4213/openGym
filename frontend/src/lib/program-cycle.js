@@ -83,10 +83,15 @@ const COMMON_LIFTS = {
 }
 
 const exactExercises = new Map()
+const bagExercises = new Map()
+const bag = value => clean(value).split(' ').sort().join(' ')
 for (const exercise of CATALOGUE) {
   const key = clean(exercise.n)
   const current = exactExercises.get(key)
   exactExercises.set(key, current === undefined ? exercise.id : null)
+  const bagKey = bag(exercise.n)
+  const bagCurrent = bagExercises.get(bagKey)
+  bagExercises.set(bagKey, bagCurrent === undefined ? exercise.id : null)
 }
 
 export const programExerciseKey = exercise => exercise?.referenceExerciseId || clean(exercise?.name || exercise?.exerciseName)
@@ -96,7 +101,7 @@ export function resolveProgramExercise(exercise, mappings = {}) {
   const mapped = mappings?.[programExerciseKey(exercise)]
   if (mapped?.exerciseId && !mapped.deleted) return mapped.exerciseId
   const name = clean(exercise?.name || exercise?.exerciseName)
-  return COMMON_LIFTS[name] || exactExercises.get(name) || null
+  return COMMON_LIFTS[name] || exactExercises.get(name) || bagExercises.get(bag(name)) || null
 }
 
 export function programExerciseRequirements(program, mappings = {}) {
