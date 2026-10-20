@@ -6,6 +6,7 @@ media/gif/
 # Runtime data — users, passkeys, per-user state, session secret
 data/
 api/programs/details/
+program-data/
 
 # Local config
 .env

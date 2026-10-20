@@ -2,7 +2,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const catalog = JSON.parse(fs.readFileSync(fileURLToPath(new URL('./programs/catalog.json', import.meta.url)), 'utf8'))
+const catalogFile = process.env.PROGRAM_CATALOG_FILE || fileURLToPath(new URL('./programs/catalog.json', import.meta.url))
+const catalog = JSON.parse(fs.readFileSync(catalogFile, 'utf8'))
 const byId = new Map(catalog.programs.map(program => [program.id, program]))
 const detailsDir = process.env.PROGRAM_DETAILS_DIR || fileURLToPath(new URL('./programs/details', import.meta.url))
 const detailCache = new Map()
