@@ -9,6 +9,11 @@ const clone = v => JSON.parse(JSON.stringify(v))
 function rng(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296 } }
 
 describe('api/sync-stamps.js matches sync-merge.js', () => {
+  it('uses the same per-entry synced maps', async () => {
+    const client = await import('./sync-merge.js')
+    expect(S.STAMPED_MAPS).toEqual(client.STAMPED_MAPS)
+  })
+
   it('on random records and entries', () => {
     for (let seed = 1; seed < 300; seed++) {
       const R = rng(seed)

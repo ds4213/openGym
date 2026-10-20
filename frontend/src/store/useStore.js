@@ -87,7 +87,7 @@ const gainedWorkoutMedia = (prev, next) => {
 export const DEF = {
   unit: 'kg', restSec: 90, restPauseSec: 15, sound: true, soundOnSilent: false, vibrateOnSilent: false, timerFlash: false, timedSetOvertime: false, keepAwake: true, lang: 'en',
   theme: 'dark', accent: 'lime', body: 'male', targetW: null,
-  bodyweight: [], routines: [], week: {}, dayPlan: {},
+  bodyweight: [], routines: [], week: {}, dayPlan: {}, personalPrograms: {},
   // A note per day off (#261): { [iso]: { tag, text, _ts } } (lib/day-notes.js). A noted day is
   // excused from the missed-day nudge; each day merges on its own stamp (lib/sync-merge.js).
   dayNotes: {},
@@ -293,7 +293,7 @@ function loadState() {
 // weigh-ins and custom exercises. A custom exercise is all a new guest may have made — with its
 // photo or video, which the server counts as unreferenced until the state that names it lands —
 // so a profile created from such a copy takes it at once, like one holding a workout.
-const hasData = st => !!((st.workouts || []).length || (st.routines || []).length || (st.bodyweight || []).length || (st.customEx || []).length || (st.measurements || []).length)
+const hasData = st => !!((st.workouts || []).length || (st.routines || []).length || (st.bodyweight || []).length || (st.customEx || []).length || (st.measurements || []).length || Object.values(st.personalPrograms || {}).some(program => program && !program.deleted))
 
 // Decide whether a pulled account state may replace the local saved state. A local active workout
 // is deliberately carried forward: the server stores completed/saved state, while the in-progress
@@ -1239,6 +1239,7 @@ export const useStore = create((set, get) => {
   // began (`pre`, see setUser): `before` holds what was there then, `later` — null when nothing
   // is — what was logged since, with the custom exercises its workouts use, in this copy's unit.
   const ADOPT_FIELDS = ['workouts', 'bodyweight', 'customEx']
+  const ADOPT_MAP_FIELDS = ['personalPrograms']
   const splitByPre = (S, pre) => {
     const before = { ...S }
     const later = { _ts: S._ts, unit: S.unit, ...(S.unitSet ? { unitSet: S.unitSet } : {}) }
@@ -1250,6 +1251,13 @@ export const useStore = create((set, get) => {
       later[f] = xs.filter(x => !had.has(entryKey(f, x)))
       if (later[f].length) any = true
     }
+    for (const f of ADOPT_MAP_FIELDS) {
+      const had = new Set(Array.isArray(pre?.[f]) ? pre[f] : [])
+      const entries = Object.entries(S[f] || {})
+      before[f] = Object.fromEntries(entries.filter(([key]) => had.has(key)))
+      later[f] = Object.fromEntries(entries.filter(([key]) => !had.has(key)))
+      if (Object.keys(later[f]).length) any = true
+    }
     if (!any) return { before, later: null }
     const used = new Set(later.workouts.flatMap(w => (Array.isArray(w?.entries) ? w.entries : []).map(e => e?.id)))
     later.customEx = [...later.customEx, ...before.customEx.filter(c => used.has(c.id))]
@@ -1257,7 +1265,7 @@ export const useStore = create((set, get) => {
   }
   const preOf = S => {
     const ids = resetIdsOf(S)
-    return Object.fromEntries(ADOPT_FIELDS.map(f => [f, ids[f] || []]))
+    return Object.fromEntries([...ADOPT_FIELDS, ...ADOPT_MAP_FIELDS].map(f => [f, ids[f] || []]))
   }
 
   // The file mirror is the durable copy: WebView storage can be evicted while the files

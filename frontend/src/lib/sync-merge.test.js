@@ -10,7 +10,33 @@ const routine = (id, name = id) => ({ id, name, ex: [] })
 const base = (over = {}) => ({
   unit: 'kg', restSec: 90, lang: 'en', week: { 1: ['r1'] }, dayPlan: {},
   workouts: [], routines: [], bodyweight: [], customEx: [], favEx: [], exWeights: {}, exNotes: {}, barWeights: {},
-  equipProfiles: [], gymCards: [], _ts: 0, ...over
+  equipProfiles: [], gymCards: [], personalPrograms: {}, _ts: 0, ...over
+})
+
+describe('personal programs sync independently', () => {
+  const plan = (id, name, ts, extra = {}) => ({ id, name, schedule: [], _ts: ts, ...extra })
+
+  it('keeps copies created on different devices and the latest edit of one copy', () => {
+    const phone = base({ _ts: 100, personalPrograms: { a: plan('a', 'Phone plan', 90), shared: plan('shared', 'Phone edit', 80) } })
+    const desk = base({ _ts: 200, personalPrograms: { b: plan('b', 'Desk plan', 70), shared: plan('shared', 'Old edit', 40) } })
+    for (const merged of [mergeStates(phone, desk), mergeStates(desk, phone)]) {
+      expect(Object.keys(merged.personalPrograms).sort()).toEqual(['a', 'b', 'shared'])
+      expect(merged.personalPrograms.shared.name).toBe('Phone edit')
+    }
+  })
+
+  it('keeps a deletion tombstone against an older saved copy', () => {
+    const deleted = base({ _ts: 100, personalPrograms: { a: plan('a', 'A', 90, { deleted: true }) } })
+    const stale = base({ _ts: 200, personalPrograms: { a: plan('a', 'A', 40) } })
+    expect(mergeStates(deleted, stale).personalPrograms.a.deleted).toBe(true)
+    expect(mergeStates(stale, deleted).personalPrograms.a.deleted).toBe(true)
+  })
+
+  it('counts an unsynced personal copy during sign-in adoption', () => {
+    const local = base({ personalPrograms: { a: plan('a', 'A', 90) } })
+    expect(localExtras(local, base()).setup).toBe(1)
+    expect(localExtras(base(), local).setup).toBeUndefined()
+  })
 })
 const clone = o => JSON.parse(JSON.stringify(o))
 const ids = xs => (xs || []).map(x => x.id)

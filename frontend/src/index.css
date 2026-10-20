@@ -532,6 +532,7 @@ h4.sec{
 .program-users{font-size:12px;color:var(--label-2);white-space:nowrap;font-variant-numeric:tabular-nums}
 .program-more{width:100%;margin-top:12px}
 .program-note{margin:12px 4px}
+.program-copy{width:100%;margin:12px 0 2px}.program-origin{margin:10px 4px 0}
 .program-schedule{margin-top:28px}
 .program-schedule-head,.program-day-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .program-schedule-head{margin:0 2px 10px}.program-schedule-head h2{font-size:22px;margin:0}.program-schedule-head span,.program-day-head span{font-size:12px;color:var(--label-2)}

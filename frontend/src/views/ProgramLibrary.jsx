@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../lib/api.js'
 import { t } from '../lib/i18n.js'
 import { programText as p } from '../lib/program-text.js'
+import { useStore } from '../store/useStore.js'
+import { copyProgramTemplate, personalProgramsOf } from '../lib/personal-programs.js'
 import Icon from '../components/Icon.jsx'
 import { Button, Row, Section, SearchField, Segmented } from '../components/ui.jsx'
 
@@ -90,23 +92,26 @@ export function programExerciseName(exercise) {
   return exercise.name || exercise.exerciseName || exercise.sets?.find(set => set.exerciseName)?.exerciseName || (exercise.category ? p('Choose {0}', exercise.category) : exercise.recommendation) || p('Assistance exercise')
 }
 
-const sourceName = source => source === 'official' ? p('Official') : p('Community')
+const sourceName = source => source === 'official' ? p('Official') : source === 'personal' ? p('Personal') : p('Community')
 const familyName = family => family === '531' ? '5/3/1' : family
 const programMeta = program => [familyName(program.family), program.weeks && p('{0} weeks', program.weeks), program.daysPerWeek && p('{0} days/week', program.daysPerWeek)].filter(Boolean).join(' · ')
 
 function ProgramDetail({ id }) {
   const nav = useNavigate()
+  const personal = useStore(state => state.S.personalPrograms?.[id])
+  const update = useStore(state => state.update)
   const [program, setProgram] = useState(null)
   const [error, setError] = useState('')
   const [selectedWeek, setSelectedWeek] = useState(1)
 
   useEffect(() => {
+    if (personal && !personal.deleted) { setProgram(personal); setSelectedWeek(personal.schedule?.[0]?.number || 1); return }
     let current = true
     api('/api/program?id=' + encodeURIComponent(id))
       .then(result => { if (current) { setProgram(result.program); setSelectedWeek(result.program.schedule?.[0]?.number || 1) } })
       .catch(reason => { if (current) setError(reason.message) })
     return () => { current = false }
-  }, [id])
+  }, [id, personal])
 
   if (error) return <div className="narrow"><div className="empty">{p('Could not load programs')}: {error}</div></div>
   if (!program) return <div className="narrow"><div className="empty">{t('Loading…')}</div></div>
@@ -118,6 +123,11 @@ function ProgramDetail({ id }) {
     [p('Workouts'), program.workoutCount], [p('People using it'), program.userCount],
   ].filter(([, value]) => value !== null && value !== undefined && value !== '')
   const week = program.schedule?.find(item => item.number === selectedWeek)
+  const copy = () => {
+    const saved = copyProgramTemplate(program)
+    update(state => { state.personalPrograms = { ...(state.personalPrograms || {}), [saved.id]: saved } })
+    nav('/programs/' + encodeURIComponent(saved.id))
+  }
 
   return <div className="narrow programs-page">
     <div className="hdr">
@@ -125,6 +135,8 @@ function ProgramDetail({ id }) {
       <Button size="sm" icon="chevronLeft" onClick={() => nav('/programs')}>{p('Programs')}</Button>
     </div>
     <Section title={p('Program details')}>{facts.map(([label, value]) => <Row key={label} title={label} value={String(value)} />)}</Section>
+    {program.detailStatus === 'full' && program.source !== 'personal' && <Button className="program-copy" icon="plus" onClick={copy}>{p('Copy to My Plans')}</Button>}
+    {program.source === 'personal' && program.sourceProgram && <p className="small dim program-origin">{p('Copied from {0}', program.sourceProgram.source === 'official' ? p('Official') : p('Community'))} · {p('Your copied programs are independent from future source updates.')}</p>}
     {program.detailStatus === 'full' && <section className="program-schedule">
       <div className="program-schedule-head"><h2>{p('Workout schedule')}</h2><span>{p('{0} workouts', program.workoutCount || 0)}</span></div>
       <div className="chips program-week-picker" aria-label={p('Choose week')}>
@@ -140,11 +152,11 @@ function ProgramDetail({ id }) {
       </article>)}</div>
     </section>}
     {!!program.compatibilityIssues?.length && <p className="program-compat-warning"><Icon name="warning" /> {p('Some source fields need verification before this program can be started automatically.')}</p>}
-    <p className="small dim program-note">{program.detailStatus === 'full'
+    {program.source !== 'personal' && <p className="small dim program-note">{program.detailStatus === 'full'
       ? p('This is the source prescription. Copy and Start Program come next so your active cycle stays independent from source updates.')
       : program.detailStatus === 'invalid'
         ? p('The saved workout details could not be read. Rebuild the program cache before starting this program.')
-        : p('Only catalogue information is available for this program right now.')}</p>
+        : p('Only catalogue information is available for this program right now.')}</p>}
   </div>
 }
 
@@ -188,6 +200,8 @@ export default function ProgramLibrary() {
   const [sort, setSort] = useState('popular')
   const [shown, setShown] = useState(40)
   const [error, setError] = useState('')
+  const personalProgramMap = useStore(state => state.S.personalPrograms)
+  const personalPrograms = useMemo(() => personalProgramsOf({ personalPrograms: personalProgramMap }), [personalProgramMap])
 
   useEffect(() => {
     if (id) return
@@ -200,7 +214,7 @@ export default function ProgramLibrary() {
 
   const groups = useMemo(() => discoveryGroups(programs), [programs])
   const source = tab === 'community' ? 'community' : ''
-  const visiblePrograms = useMemo(() => programs.filter(program => !source || program.source === source), [programs, source])
+  const visiblePrograms = useMemo(() => tab === 'mine' ? personalPrograms : programs.filter(program => !source || program.source === source), [programs, source, tab, personalPrograms])
   const options = useMemo(() => ({
     days: [...new Set(visiblePrograms.map(program => program.daysPerWeek).filter(Boolean))].sort((a, b) => a - b),
     goals: [...new Set(visiblePrograms.map(program => program.goal).filter(Boolean))].sort(),
@@ -209,7 +223,7 @@ export default function ProgramLibrary() {
     categories: [...new Set(visiblePrograms.map(program => program.family).filter(Boolean))].sort(),
   }), [visiblePrograms])
   const activeFilterCount = Object.values(filters).filter(Boolean).length
-  const filtered = useMemo(() => sortPrograms(filterProgramCatalog(programs, query, source, filters), tab === 'community' ? sort : 'az'), [programs, query, source, filters, sort, tab])
+  const filtered = useMemo(() => sortPrograms(filterProgramCatalog(tab === 'mine' ? personalPrograms : programs, query, source, filters), tab === 'community' ? sort : 'az'), [programs, personalPrograms, query, source, filters, sort, tab])
   const open = program => nav('/programs/' + encodeURIComponent(program.id))
   const chooseTab = value => { setTab(value); setFilters(emptyFilters); setQuery(''); setShown(40) }
   const setFilter = (name, value) => { setFilters(current => ({ ...current, [name]: value })); setShown(40) }
@@ -218,7 +232,7 @@ export default function ProgramLibrary() {
   return <div className="narrow programs-page">
     <div className="hdr program-title"><div><h1>{p('Programs')}</h1><div className="sub">{counts ? p('{0} KeyLifts programs', counts.total) : p('KeyLifts program catalogue')}</div></div></div>
     <Segmented className="program-tabs" value={tab} onChange={chooseTab} options={[
-      { value: 'discover', label: p('Discover') }, { value: 'community', label: p('Community') },
+      { value: 'discover', label: p('Discover') }, { value: 'community', label: p('Community') }, { value: 'mine', label: p('My Plans') },
     ]} />
     <div className="program-search-row">
       <SearchField value={query} onChange={event => { setQuery(event.target.value); setShown(40) }} onClear={() => setQuery('')} placeholder={p('Search programs…')} />
@@ -233,8 +247,8 @@ export default function ProgramLibrary() {
       {activeFilterCount > 0 && <Button className="program-filter-clear" onClick={() => { setFilters(emptyFilters); setShown(40) }}>{p('Clear all filters')}</Button>}
     </div>}
 
-    {error && <div className="empty">{p('Could not load programs')}: {error}</div>}
-    {!error && !counts && <div className="program-skeleton" aria-label={t('Loading…')}><i /><i /><i /></div>}
+    {error && tab !== 'mine' && <div className="empty">{p('Could not load programs')}: {error}</div>}
+    {!error && !counts && tab !== 'mine' && <div className="program-skeleton" aria-label={t('Loading…')}><i /><i /><i /></div>}
 
     {counts && tab === 'discover' && !query && !activeFilterCount && <div className="program-discover-sections">
       <DiscoverySection title="Recommended" subtitle="Complete official programs for a strong start" programs={groups.recommended} onOpen={open} />
@@ -244,8 +258,8 @@ export default function ProgramLibrary() {
       <DiscoverySection title="New discoveries" subtitle="Recently shared with the community" programs={groups.newest} onOpen={open} />
     </div>}
 
-    {counts && <section className="program-browser">
-      <div className="program-browser-head"><h2>{tab === 'community' ? p('Community programs') : p('Browse all')}</h2><span>{p('{0} programs', filtered.length)}</span></div>
+    {(counts || tab === 'mine') && <section className="program-browser">
+      <div className="program-browser-head"><h2>{tab === 'community' ? p('Community programs') : tab === 'mine' ? p('My Plans') : p('Browse all')}</h2><span>{p('{0} programs', filtered.length)}</span></div>
       {tab === 'community' && <div className="chips program-sort">
         {[['popular', p('Most popular')], ['new', p('Newest')], ['az', p('A–Z')]].map(([value, label]) =>
           <button key={value} className={'chip nocap' + (sort === value ? ' on' : '')} onClick={() => { setSort(value); setShown(40) }}>{label}</button>)}
@@ -257,7 +271,9 @@ export default function ProgramLibrary() {
           {program.userCount > 0 && <span className="program-users">{p('{0} people', program.userCount)}</span>}
           <Icon name="chevronRight" className="chev" />
         </button>})}
-        {!filtered.length && <div className="empty"><Icon name="magnifier" /> {t('No match')}</div>}
+        {!filtered.length && (tab === 'mine' && !personalPrograms.length
+          ? <div className="empty">{p('No personal programs yet. Open a complete program and copy it here.')}</div>
+          : <div className="empty"><Icon name="magnifier" /> {t('No match')}</div>)}
       </div>
       {filtered.length > shown && <Button className="program-more" onClick={() => setShown(value => value + 40)}>{t('Show more')}</Button>}
     </section>}

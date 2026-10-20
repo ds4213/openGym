@@ -1,7 +1,7 @@
 import { getLang } from './i18n-core.js'
 
 const zh = {
-  Programs: '训练计划',
+  Programs: '训练计划', Personal: '个人', 'My Plans': '我的计划',
   'KeyLifts program catalogue': 'KeyLifts 训练计划目录',
   '{0} KeyLifts programs': '{0} 个 KeyLifts 训练计划',
   'Search programs…': '搜索训练计划…',
@@ -28,10 +28,13 @@ const zh = {
   'The saved workout details could not be read. Rebuild the program cache before starting this program.': '已保存的训练详情无法读取。请重新生成计划缓存后再开始。',
   'Only catalogue information is available for this program right now.': '这个计划目前只有目录信息。',
   'Some source fields need verification before this program can be started automatically.': '部分来源字段仍需核对，暂时不能自动开始这个计划。',
+  'Copy to My Plans': '复制到我的计划', 'Copied from {0}': '复制自 {0}',
+  'Your copied programs are independent from future source updates.': '你复制的计划不会被来源后续更新覆盖。',
+  'No personal programs yet. Open a complete program and copy it here.': '还没有个人计划。打开一个完整计划并复制到这里。',
 }
 
 const zhTW = {
-  Programs: '訓練計畫',
+  Programs: '訓練計畫', Personal: '個人', 'My Plans': '我的計畫',
   'KeyLifts program catalogue': 'KeyLifts 訓練計畫目錄',
   '{0} KeyLifts programs': '{0} 個 KeyLifts 訓練計畫',
   'Search programs…': '搜尋訓練計畫…',
@@ -58,6 +61,9 @@ const zhTW = {
   'The saved workout details could not be read. Rebuild the program cache before starting this program.': '已儲存的訓練詳情無法讀取。請重新產生計畫快取後再開始。',
   'Only catalogue information is available for this program right now.': '這個計畫目前只有目錄資訊。',
   'Some source fields need verification before this program can be started automatically.': '部分來源欄位仍需核對，暫時不能自動開始這個計畫。',
+  'Copy to My Plans': '複製到我的計畫', 'Copied from {0}': '複製自 {0}',
+  'Your copied programs are independent from future source updates.': '你複製的計畫不會被來源後續更新覆蓋。',
+  'No personal programs yet. Open a complete program and copy it here.': '還沒有個人計畫。打開一個完整計畫並複製到這裡。',
 }
 
 export function programText(key, ...values) {
