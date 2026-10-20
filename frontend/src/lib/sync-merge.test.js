@@ -10,7 +10,7 @@ const routine = (id, name = id) => ({ id, name, ex: [] })
 const base = (over = {}) => ({
   unit: 'kg', restSec: 90, lang: 'en', week: { 1: ['r1'] }, dayPlan: {},
   workouts: [], routines: [], bodyweight: [], customEx: [], favEx: [], exWeights: {}, exNotes: {}, barWeights: {},
-  equipProfiles: [], gymCards: [], personalPrograms: {}, _ts: 0, ...over
+  equipProfiles: [], gymCards: [], personalPrograms: {}, programCycles: {}, _ts: 0, ...over
 })
 
 describe('personal programs sync independently', () => {
@@ -36,6 +36,13 @@ describe('personal programs sync independently', () => {
     const local = base({ personalPrograms: { a: plan('a', 'A', 90) } })
     expect(localExtras(local, base()).setup).toBe(1)
     expect(localExtras(base(), local).setup).toBeUndefined()
+  })
+
+  it('merges cycle progress by its own timestamp and counts a new cycle at sign-in', () => {
+    const old = base({ programCycles: { c: { id: 'c', currentDay: 0, _ts: 10 } } })
+    const current = base({ programCycles: { c: { id: 'c', currentDay: 1, _ts: 20 } } })
+    expect(mergeStates(old, current).programCycles.c.currentDay).toBe(1)
+    expect(localExtras(current, base()).setup).toBe(1)
   })
 })
 const clone = o => JSON.parse(JSON.stringify(o))

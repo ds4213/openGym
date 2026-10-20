@@ -66,6 +66,7 @@ import { workoutCardModel, layoutWorkoutCard, drawWorkoutCard, viewAspect, CARD_
 import { copyText } from './lib/clipboard.js'
 import { queueRemaining, pinState } from './lib/queue.js'
 import { DAY_NOTE_TAGS, DAY_NOTE_LABEL, DAY_NOTE_ICON, dayNoteOf, dayNoteLine, canNoteDay, withDayNote } from './lib/day-notes.js'
+import { advanceProgramCycle, buildProgramWorkout, createProgramCycle } from './lib/program-cycle.js'
 
 const S = () => useStore.getState().S
 const update = (...a) => useStore.getState().update(...a)
@@ -2793,6 +2794,45 @@ export function beginWorkout(routineIds, bw) {
   navToWorkout()
 }
 
+function beginProgramWorkout(cycle, bw) {
+  const st = S()
+  if (st.active) { toast(t('Finish the current workout first.')); return false }
+  let active
+  try { active = buildProgramWorkout(cycle, st.workoutView || 'cards') } catch (error) { toast(error.message); return false }
+  active.bw = bw || null
+  update(s => {
+    for (const [id, item] of Object.entries(s.programCycles || {})) {
+      if (id !== cycle.id && item?.status === 'active') s.programCycles[id] = { ...item, status: 'paused', _ts: Date.now() }
+    }
+    s.programCycles = { ...(s.programCycles || {}), [cycle.id]: cycle }
+    s.activeProgramCycleId = cycle.id
+    s.active = active
+  })
+  useUI.getState().stopRest()
+  navToWorkout()
+  return true
+}
+
+export function startProgram(program, trainingMaxes) {
+  const st = S()
+  if (st.active) { toast(t('Finish the current workout first.')); return false }
+  let cycle
+  try { cycle = createProgramCycle(program, trainingMaxes, st.unit) } catch (error) { toast(error.message); return false }
+  if (st.weighIn === false) return beginProgramWorkout(cycle, null)
+  bwSheet({ required: true, onDone: bw => beginProgramWorkout(cycle, bw) })
+  return true
+}
+
+export function continueProgram(cycleId) {
+  const st = S()
+  const cycle = st.programCycles?.[cycleId]
+  if (!cycle || cycle.status === 'completed') return false
+  if (st.active) { toast(t('Finish the current workout first.')); return false }
+  if (st.weighIn === false) return beginProgramWorkout(cycle, null)
+  bwSheet({ required: true, onDone: bw => beginProgramWorkout(cycle, bw) })
+  return true
+}
+
 // "Repeat today" (#58): a saved workout's exercises as a new freestyle session dated today, each
 // seeded from what that workout logged (lib/session-repeat.js). The weigh-in asks first, the
 // way starting any workout does.
@@ -3405,6 +3445,13 @@ function doFinishWorkout() {
         if (mx > 0 && beatsWeight(e.id, mx, (s.exWeights[e.id] || {}).w || 0)) s.exWeights[e.id] = { w: mx, d: w.d }
       })
       s.workouts.push(w)
+    }
+    const position = w.programCycle
+    const cycle = position && s.programCycles?.[position.id]
+    if (cycle && cycle.status === 'active' && cycle.currentWeek === position.week && cycle.currentDay === position.day) {
+      const advanced = advanceProgramCycle(cycle)
+      s.programCycles[position.id] = advanced
+      if (advanced.status === 'completed' && s.activeProgramCycleId === position.id) s.activeProgramCycleId = null
     }
     s.active = null
     // A rotation pass this app manages starts its next pass the moment the last session lands

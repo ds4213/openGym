@@ -31,6 +31,11 @@ const zh = {
   'Copy to My Plans': '复制到我的计划', 'Copied from {0}': '复制自 {0}',
   'Your copied programs are independent from future source updates.': '你复制的计划不会被来源后续更新覆盖。',
   'No personal programs yet. Open a complete program and copy it here.': '还没有个人计划。打开一个完整计划并复制到这里。',
+  'Start Program': '开始计划', 'Start again': '重新开始', 'Current cycle': '当前周期', 'Start next workout': '开始下一次训练',
+  'Continue workout': '继续训练', 'Training Max': '训练最大值', 'Exercise mapping required': '需要关联动作',
+  'Set the Training Max used to calculate this cycle. It stays separate from your estimated 1RM.': '设置本周期计算重量所用的训练最大值；它与估算 1RM 分开保存。',
+  'Map every exercise to openGym before starting this program.': '开始计划前，需要先把每个动作关联到 openGym 动作。',
+  'Finish the current workout first': '请先完成当前训练', 'Create cycle and start Day 1': '创建周期并开始第 1 天',
 }
 
 const zhTW = {
@@ -64,6 +69,11 @@ const zhTW = {
   'Copy to My Plans': '複製到我的計畫', 'Copied from {0}': '複製自 {0}',
   'Your copied programs are independent from future source updates.': '你複製的計畫不會被來源後續更新覆蓋。',
   'No personal programs yet. Open a complete program and copy it here.': '還沒有個人計畫。打開一個完整計畫並複製到這裡。',
+  'Start Program': '開始計畫', 'Start again': '重新開始', 'Current cycle': '目前週期', 'Start next workout': '開始下一次訓練',
+  'Continue workout': '繼續訓練', 'Training Max': '訓練最大值', 'Exercise mapping required': '需要關聯動作',
+  'Set the Training Max used to calculate this cycle. It stays separate from your estimated 1RM.': '設定本週期計算重量所用的訓練最大值；它與估算 1RM 分開儲存。',
+  'Map every exercise to openGym before starting this program.': '開始計畫前，需要先把每個動作關聯到 openGym 動作。',
+  'Finish the current workout first': '請先完成目前訓練', 'Create cycle and start Day 1': '建立週期並開始第 1 天',
 }
 
 export function programText(key, ...values) {

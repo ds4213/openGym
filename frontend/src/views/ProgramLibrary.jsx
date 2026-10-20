@@ -5,8 +5,9 @@ import { t } from '../lib/i18n.js'
 import { programText as p } from '../lib/program-text.js'
 import { useStore } from '../store/useStore.js'
 import { copyProgramTemplate, personalProgramsOf } from '../lib/personal-programs.js'
+import { cycleForProgram, trainingMaxRequirements } from '../lib/program-cycle.js'
 import Icon from '../components/Icon.jsx'
-import { Button, Row, Section, SearchField, Segmented } from '../components/ui.jsx'
+import { Button, NumberField, Row, Section, SearchField, Segmented } from '../components/ui.jsx'
 
 const emptyFilters = { days: '', goal: '', level: '', phase: '', category: '' }
 const textOf = program => [program.name, program.family, program.phase, program.goal, ...(program.levels || [])].filter(Boolean).join(' ').toLocaleLowerCase()
@@ -99,10 +100,15 @@ const programMeta = program => [familyName(program.family), program.weeks && p('
 function ProgramDetail({ id }) {
   const nav = useNavigate()
   const personal = useStore(state => state.S.personalPrograms?.[id])
+  const programCycles = useStore(state => state.S.programCycles)
+  const active = useStore(state => state.S.active)
+  const unit = useStore(state => state.S.unit)
   const update = useStore(state => state.update)
   const [program, setProgram] = useState(null)
   const [error, setError] = useState('')
   const [selectedWeek, setSelectedWeek] = useState(1)
+  const [setup, setSetup] = useState(false)
+  const [trainingMaxes, setTrainingMaxes] = useState({})
 
   useEffect(() => {
     if (personal && !personal.deleted) { setProgram(personal); setSelectedWeek(personal.schedule?.[0]?.number || 1); return }
@@ -123,10 +129,23 @@ function ProgramDetail({ id }) {
     [p('Workouts'), program.workoutCount], [p('People using it'), program.userCount],
   ].filter(([, value]) => value !== null && value !== undefined && value !== '')
   const week = program.schedule?.find(item => item.number === selectedWeek)
+  const cycle = cycleForProgram({ programCycles }, program.id)
+  const tmRequirements = trainingMaxRequirements(program)
+  const unmapped = tmRequirements.filter(item => !item.exerciseId)
+  const ready = tmRequirements.length > 0 && !unmapped.length && tmRequirements.every(item => Number(trainingMaxes[item.key]) > 0)
   const copy = () => {
     const saved = copyProgramTemplate(program)
     update(state => { state.personalPrograms = { ...(state.personalPrograms || {}), [saved.id]: saved } })
     nav('/programs/' + encodeURIComponent(saved.id))
+  }
+  const start = async () => {
+    const { startProgram } = await import('../sheets.jsx')
+    startProgram(program, trainingMaxes)
+  }
+  const resume = async () => {
+    if (active?.programCycle?.id === cycle.id) { nav('/workout'); return }
+    const { continueProgram } = await import('../sheets.jsx')
+    continueProgram(cycle.id)
   }
 
   return <div className="narrow programs-page">
@@ -137,6 +156,24 @@ function ProgramDetail({ id }) {
     <Section title={p('Program details')}>{facts.map(([label, value]) => <Row key={label} title={label} value={String(value)} />)}</Section>
     {program.detailStatus === 'full' && program.source !== 'personal' && <Button className="program-copy" icon="plus" onClick={copy}>{p('Copy to My Plans')}</Button>}
     {program.source === 'personal' && program.sourceProgram && <p className="small dim program-origin">{p('Copied from {0}', program.sourceProgram.source === 'official' ? p('Official') : p('Community'))} · {p('Your copied programs are independent from future source updates.')}</p>}
+    {program.source === 'personal' && program.detailStatus === 'full' && <section className="program-start">
+      {cycle?.status === 'active' || cycle?.status === 'paused' ? <>
+        <div className="program-schedule-head"><h2>{p('Current cycle')}</h2><span>{p('Week {0}', cycle.currentWeek + 1)} · {p('Day {0}', cycle.currentDay + 1)}</span></div>
+        <Button variant="primary" icon="play" onClick={resume}>{active?.programCycle?.id === cycle.id ? p('Continue workout') : p('Start next workout')}</Button>
+      </> : <>
+        <Button variant="primary" icon="play" onClick={() => setSetup(value => !value)}>{cycle?.status === 'completed' ? p('Start again') : p('Start Program')}</Button>
+        {setup && <div className="program-tm-setup">
+          <h2>{p('Training Max')}</h2>
+          <p className="small dim">{p('Set the Training Max used to calculate this cycle. It stays separate from your estimated 1RM.')}</p>
+          {tmRequirements.map(item => <label className="program-tm-row" key={item.key}>
+            <span><strong>{item.name}</strong>{!item.exerciseId && <small>{p('Exercise mapping required')}</small>}</span>
+            <span><NumberField value={trainingMaxes[item.key] ?? ''} nullable onChange={value => setTrainingMaxes(current => ({ ...current, [item.key]: value }))} aria-label={`${item.name} TM`} /> {unit}</span>
+          </label>)}
+          {!!unmapped.length && <p className="program-compat-warning"><Icon name="warning" /> {p('Map every exercise to openGym before starting this program.')}</p>}
+          <Button variant="primary" disabled={!ready || !!active} onClick={start}>{active ? p('Finish the current workout first') : p('Create cycle and start Day 1')}</Button>
+        </div>}
+      </>}
+    </section>}
     {program.detailStatus === 'full' && <section className="program-schedule">
       <div className="program-schedule-head"><h2>{p('Workout schedule')}</h2><span>{p('{0} workouts', program.workoutCount || 0)}</span></div>
       <div className="chips program-week-picker" aria-label={p('Choose week')}>

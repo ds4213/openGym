@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('../store/useStore.js', () => ({ useStore: selector => selector({ S: { personalPrograms: {} }, update: () => {} }) }))
+vi.mock('../store/useStore.js', () => ({ useStore: selector => selector({ S: { personalPrograms: {}, programCycles: {}, active: null, unit: 'kg' }, update: () => {} }) }))
 import { discoveryGroups, filterProgramCatalog, goalPresentation, programExerciseName, setPrescription, sortPrograms } from './ProgramLibrary.jsx'
 
 const programs = [
