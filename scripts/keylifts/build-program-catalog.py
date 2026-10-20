@@ -1,11 +1,17 @@
 import argparse
 import csv
 import json
+import re
 from pathlib import Path
 
 
 def integer(value):
     return int(value) if value not in (None, "") else None
+
+
+def levels(value):
+    found = set(re.findall(r"beginner|intermediate|advanced", str(value or ""), re.IGNORECASE))
+    return [level for level in ("Beginner", "Intermediate", "Advanced") if level.casefold() in {item.casefold() for item in found}]
 
 
 def main():
@@ -40,6 +46,7 @@ def main():
             "goal": row.get("goal") or None if row else None,
             "weeks": integer(row.get("weeks")) if row else None,
             "daysPerWeek": integer(row.get("days_per_week")) if row else None,
+            "levels": levels(raw.get("levels")) if raw else [],
             "userCount": integer(row.get("user_count")) if row and source == "community" else None,
             "workoutCount": integer(row.get("workout_count") or row.get("workouts_in_bundle")) if row else None,
             "catalogStatus": "indexed" if row else "metadata-only",

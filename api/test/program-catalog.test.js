@@ -15,6 +15,8 @@ test('catalog filters source and searchable metadata', () => {
   assert.ok(matches.total > 0)
   assert.ok(matches.programs.every(program => program.source === 'community'))
   assert.match(matches.programs[0].createdAt, /^20\d\d-/)
+  assert.ok(matches.programs.every(program => Array.isArray(program.levels)))
+  assert.ok(matches.programs.flatMap(program => program.levels).every(level => ['Beginner', 'Intermediate', 'Advanced'].includes(level)))
 })
 
 test('catalog validates paging and returns a program by id', () => {

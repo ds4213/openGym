@@ -6,21 +6,32 @@ import { programText as p } from '../lib/program-text.js'
 import Icon from '../components/Icon.jsx'
 import { Button, Row, Section, SearchField, Segmented } from '../components/ui.jsx'
 
-const textOf = program => [program.name, program.family, program.phase, program.goal].filter(Boolean).join(' ').toLocaleLowerCase()
-const goalMatches = (program, goal) => {
-  const value = (program.goal || '').toLocaleLowerCase()
-  if (!goal) return true
-  if (goal === 'muscle') return value.includes('muscle')
-  if (goal === 'strength') return value.includes('strength')
-  if (goal === 'conditioning') return value.includes('conditioning') || value.includes('challenge')
-  return value.includes('fat')
-}
+const emptyFilters = { days: '', goal: '', level: '', phase: '', category: '' }
+const textOf = program => [program.name, program.family, program.phase, program.goal, ...(program.levels || [])].filter(Boolean).join(' ').toLocaleLowerCase()
+const same = (left, right) => String(left || '').toLocaleLowerCase() === String(right || '').toLocaleLowerCase()
 
-export function filterProgramCatalog(programs, query, source = '', goal = '') {
+export function filterProgramCatalog(programs, query, source = '', filters = emptyFilters) {
   const needle = query.trim().toLocaleLowerCase()
   return programs.filter(program =>
-    (!source || program.source === source) && goalMatches(program, goal) && (!needle || textOf(program).includes(needle))
+    (!source || program.source === source) &&
+    (!filters.days || Number(program.daysPerWeek) === Number(filters.days)) &&
+    (!filters.goal || same(program.goal, filters.goal)) &&
+    (!filters.level || (program.levels || []).some(level => same(level, filters.level))) &&
+    (!filters.phase || same(program.phase, filters.phase)) &&
+    (!filters.category || same(program.family, filters.category)) &&
+    (!needle || textOf(program).includes(needle))
   )
+}
+
+export function goalPresentation(goal = '') {
+  const value = goal.toLocaleLowerCase()
+  if (value === 'build muscle') return { tone: 'muscle', icon: 'dumbbell' }
+  if (value === 'strength and conditioning') return { tone: 'strength-conditioning', icon: 'bolt' }
+  if (value === 'strength and muscle') return { tone: 'strength-muscle', icon: 'figureStrength' }
+  if (value === 'challenge' || value === 'challenges') return { tone: 'challenge', icon: 'trophy' }
+  if (value === 'conditioning') return { tone: 'conditioning', icon: 'figureRun' }
+  if (value === 'lose fat') return { tone: 'fat-loss', icon: 'flame' }
+  return { tone: 'strength', icon: 'barbell' }
 }
 
 export function sortPrograms(programs, sort) {
@@ -45,7 +56,8 @@ export function discoveryGroups(programs) {
 }
 
 const sourceName = source => source === 'official' ? p('Official') : p('Community')
-const programMeta = program => [program.family, program.weeks && p('{0} weeks', program.weeks), program.daysPerWeek && p('{0} days/week', program.daysPerWeek)].filter(Boolean).join(' · ')
+const familyName = family => family === '531' ? '5/3/1' : family
+const programMeta = program => [familyName(program.family), program.weeks && p('{0} weeks', program.weeks), program.daysPerWeek && p('{0} days/week', program.daysPerWeek)].filter(Boolean).join(' · ')
 
 function ProgramDetail({ id }) {
   const nav = useNavigate()
@@ -66,6 +78,7 @@ function ProgramDetail({ id }) {
   const facts = [
     [p('Source'), sourceName(program.source)], [p('Family'), program.family], [p('Phase'), program.phase],
     [p('Goal'), program.goal], [p('Weeks'), program.weeks], [p('Days per week'), program.daysPerWeek],
+    [p('Level'), (program.levels || []).map(level => p(level)).join(', ')],
     [p('Workouts'), program.workoutCount], [p('People using it'), program.userCount],
   ].filter(([, value]) => value !== null && value !== undefined && value !== '')
 
@@ -82,11 +95,23 @@ function ProgramDetail({ id }) {
 }
 
 function ProgramCard({ program, onOpen }) {
-  return <button className="program-card" onClick={() => onOpen(program)}>
+  const presentation = goalPresentation(program.goal)
+  return <button className={`program-card goal-${presentation.tone}`} onClick={() => onOpen(program)}>
+    <span className="program-card-top"><span className="program-icon"><Icon name={presentation.icon} /></span><span className="program-goal-label">{program.goal}</span></span>
     <strong>{program.name}</strong>
     <span className="program-card-meta">{programMeta(program) || program.goal}</span>
     <span className="program-card-foot"><span>{sourceName(program.source)}</span><span>{program.userCount ? p('{0} people', program.userCount) : program.goal}</span></span>
   </button>
+}
+
+function FilterGroup({ label, value, options, onChange, translate = false, format = String }) {
+  if (!options.length) return null
+  return <div className="program-filter-group">
+    <div className="program-filter-label">{p(label)}</div>
+    <div className="chips program-filter-options">
+      {options.map(option => <button key={option} className={'chip nocap' + (String(value) === String(option) ? ' on' : '')} onClick={() => onChange(String(value) === String(option) ? '' : option)}>{translate ? p(String(option)) : format(option)}</button>)}
+    </div>
+  </div>
 }
 
 function DiscoverySection({ title, subtitle, programs, onOpen }) {
@@ -104,7 +129,8 @@ export default function ProgramLibrary() {
   const [counts, setCounts] = useState(null)
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState('discover')
-  const [goal, setGoal] = useState('')
+  const [filters, setFilters] = useState(emptyFilters)
+  const [showFilters, setShowFilters] = useState(false)
   const [sort, setSort] = useState('popular')
   const [shown, setShown] = useState(40)
   const [error, setError] = useState('')
@@ -120,10 +146,19 @@ export default function ProgramLibrary() {
 
   const groups = useMemo(() => discoveryGroups(programs), [programs])
   const source = tab === 'community' ? 'community' : ''
-  const filtered = useMemo(() => sortPrograms(filterProgramCatalog(programs, query, source, goal), tab === 'community' ? sort : 'az'), [programs, query, source, goal, sort, tab])
+  const visiblePrograms = useMemo(() => programs.filter(program => !source || program.source === source), [programs, source])
+  const options = useMemo(() => ({
+    days: [...new Set(visiblePrograms.map(program => program.daysPerWeek).filter(Boolean))].sort((a, b) => a - b),
+    goals: [...new Set(visiblePrograms.map(program => program.goal).filter(Boolean))].sort(),
+    levels: ['Beginner', 'Intermediate', 'Advanced'],
+    phases: [...new Set(visiblePrograms.map(program => program.phase).filter(Boolean))].sort(),
+    categories: [...new Set(visiblePrograms.map(program => program.family).filter(Boolean))].sort(),
+  }), [visiblePrograms])
+  const activeFilterCount = Object.values(filters).filter(Boolean).length
+  const filtered = useMemo(() => sortPrograms(filterProgramCatalog(programs, query, source, filters), tab === 'community' ? sort : 'az'), [programs, query, source, filters, sort, tab])
   const open = program => nav('/programs/' + encodeURIComponent(program.id))
-  const chooseTab = value => { setTab(value); setGoal(''); setQuery(''); setShown(40) }
-  const chooseGoal = value => { setGoal(value); setShown(40) }
+  const chooseTab = value => { setTab(value); setFilters(emptyFilters); setQuery(''); setShown(40) }
+  const setFilter = (name, value) => { setFilters(current => ({ ...current, [name]: value })); setShown(40) }
   if (id) return <ProgramDetail id={id} />
 
   return <div className="narrow programs-page">
@@ -131,12 +166,23 @@ export default function ProgramLibrary() {
     <Segmented className="program-tabs" value={tab} onChange={chooseTab} options={[
       { value: 'discover', label: p('Discover') }, { value: 'community', label: p('Community') },
     ]} />
-    <SearchField value={query} onChange={event => { setQuery(event.target.value); setShown(40) }} onClear={() => setQuery('')} placeholder={p('Search programs…')} />
+    <div className="program-search-row">
+      <SearchField value={query} onChange={event => { setQuery(event.target.value); setShown(40) }} onClear={() => setQuery('')} placeholder={p('Search programs…')} />
+      <Button className={'program-filter-toggle' + (activeFilterCount ? ' active' : '')} icon="slider" onClick={() => setShowFilters(value => !value)} aria-label={p('Filters')} aria-expanded={showFilters}>{p('Filters')}{activeFilterCount ? ` · ${activeFilterCount}` : ''}</Button>
+    </div>
+    {showFilters && <div className="program-filter-panel">
+      <FilterGroup label="Days per week" value={filters.days} options={options.days} onChange={value => setFilter('days', value)} />
+      <FilterGroup label="Goal" value={filters.goal} options={options.goals} onChange={value => setFilter('goal', value)} />
+      <FilterGroup label="Level" value={filters.level} options={options.levels} onChange={value => setFilter('level', value)} translate />
+      <FilterGroup label="Phase" value={filters.phase} options={options.phases} onChange={value => setFilter('phase', value)} />
+      <FilterGroup label="Category" value={filters.category} options={options.categories} onChange={value => setFilter('category', value)} format={familyName} />
+      {activeFilterCount > 0 && <Button className="program-filter-clear" onClick={() => { setFilters(emptyFilters); setShown(40) }}>{p('Clear all filters')}</Button>}
+    </div>}
 
     {error && <div className="empty">{p('Could not load programs')}: {error}</div>}
     {!error && !counts && <div className="program-skeleton" aria-label={t('Loading…')}><i /><i /><i /></div>}
 
-    {counts && tab === 'discover' && !query && !goal && <div className="program-discover-sections">
+    {counts && tab === 'discover' && !query && !activeFilterCount && <div className="program-discover-sections">
       <DiscoverySection title="Recommended" subtitle="Complete official programs for a strong start" programs={groups.recommended} onOpen={open} />
       <DiscoverySection title="Popular" subtitle="Most used by the KeyLifts community" programs={groups.popular} onOpen={open} />
       <DiscoverySection title="Build muscle" subtitle="Programs focused on size and hypertrophy" programs={groups.muscle} onOpen={open} />
@@ -146,20 +192,17 @@ export default function ProgramLibrary() {
 
     {counts && <section className="program-browser">
       <div className="program-browser-head"><h2>{tab === 'community' ? p('Community programs') : p('Browse all')}</h2><span>{p('{0} programs', filtered.length)}</span></div>
-      <div className="chips program-goals">
-        {[["", p('All goals')], ['strength', p('Strength')], ['muscle', p('Build muscle')], ['conditioning', p('Conditioning')], ['fat', p('Fat loss')]].map(([value, label]) =>
-          <button key={value} className={'chip nocap' + (goal === value ? ' on' : '')} onClick={() => chooseGoal(value)}>{label}</button>)}
-      </div>
       {tab === 'community' && <div className="chips program-sort">
         {[['popular', p('Most popular')], ['new', p('Newest')], ['az', p('A–Z')]].map(([value, label]) =>
           <button key={value} className={'chip nocap' + (sort === value ? ' on' : '')} onClick={() => { setSort(value); setShown(40) }}>{label}</button>)}
       </div>}
       <div className="list program-list">
-        {filtered.slice(0, shown).map(program => <button key={program.id} className="item program-row" onClick={() => open(program)}>
+        {filtered.slice(0, shown).map(program => { const presentation = goalPresentation(program.goal); return <button key={program.id} className={`item program-row goal-${presentation.tone}`} onClick={() => open(program)}>
+          <span className="program-row-icon"><Icon name={presentation.icon} /></span>
           <div className="grow"><div className="tt">{program.name}</div><div className="ss">{[sourceName(program.source), programMeta(program)].filter(Boolean).join(' · ')}</div></div>
           {program.userCount > 0 && <span className="program-users">{p('{0} people', program.userCount)}</span>}
           <Icon name="chevronRight" className="chev" />
-        </button>)}
+        </button>})}
         {!filtered.length && <div className="empty"><Icon name="magnifier" /> {t('No match')}</div>}
       </div>
       {filtered.length > shown && <Button className="program-more" onClick={() => setShown(value => value + 40)}>{t('Show more')}</Button>}

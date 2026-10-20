@@ -12,7 +12,7 @@ export function listPrograms({ q = '', source = '', offset = '0', limit = '100' 
   const needle = String(q).trim().toLocaleLowerCase()
   const matches = catalog.programs.filter(program =>
     (!source || program.source === source) &&
-    (!needle || [program.name, program.family, program.phase, program.goal].some(value => value?.toLocaleLowerCase().includes(needle)))
+    (!needle || [program.name, program.family, program.phase, program.goal, ...(program.levels || [])].some(value => value?.toLocaleLowerCase().includes(needle)))
   )
   return {
     programs: matches.slice(start, start + size),

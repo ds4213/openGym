@@ -3163,6 +3163,9 @@ components:
         goal: { type: ['string', 'null'] }
         weeks: { type: ['integer', 'null'] }
         daysPerWeek: { type: ['integer', 'null'] }
+        levels:
+          type: array
+          items: { type: string, enum: [Beginner, Intermediate, Advanced] }
         userCount: { type: ['integer', 'null'] }
         workoutCount: { type: ['integer', 'null'] }
         catalogStatus: { type: string, enum: [indexed, metadata-only] }

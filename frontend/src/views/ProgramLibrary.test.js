@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { discoveryGroups, filterProgramCatalog, sortPrograms } from './ProgramLibrary.jsx'
+import { discoveryGroups, filterProgramCatalog, goalPresentation, sortPrograms } from './ProgramLibrary.jsx'
 
 const programs = [
-  { name: 'Boring But Big', source: 'official', family: '531', phase: 'Leader', goal: 'Strength' },
-  { name: 'GZCL Rippler', source: 'community', family: 'GZCL', phase: 'Strength', goal: 'Lose Fat' },
+  { name: 'Boring But Big', source: 'official', family: '531', phase: 'Leader', goal: 'Strength', daysPerWeek: 4, levels: [] },
+  { name: 'GZCL Rippler', source: 'community', family: 'GZCL', phase: 'Strength', goal: 'Lose Fat', daysPerWeek: 3, levels: ['Intermediate'] },
 ]
 
 describe('program catalogue filtering', () => {
@@ -17,9 +17,15 @@ describe('program catalogue filtering', () => {
     expect(filterProgramCatalog(programs, '', 'community')).toEqual([programs[1]])
   })
 
-  it('filters the goal groups used by the browse chips', () => {
-    expect(filterProgramCatalog(programs, '', '', 'muscle')).toEqual([])
-    expect(filterProgramCatalog(programs, '', '', 'fat')).toEqual([programs[1]])
+  it('combines the five exact KeyLifts filters', () => {
+    expect(filterProgramCatalog(programs, '', '', { days: 3, goal: 'Lose Fat', level: 'Intermediate', phase: 'Strength', category: 'GZCL' })).toEqual([programs[1]])
+    expect(filterProgramCatalog(programs, '', '', { days: 4, goal: '', level: 'Intermediate', phase: '', category: '' })).toEqual([])
+  })
+
+  it('maps goals to stable colors and existing icons', () => {
+    expect(goalPresentation('Build Muscle')).toEqual({ tone: 'muscle', icon: 'dumbbell' })
+    expect(goalPresentation('Lose Fat')).toEqual({ tone: 'fat-loss', icon: 'flame' })
+    expect(goalPresentation('Challenges')).toEqual({ tone: 'challenge', icon: 'trophy' })
   })
 })
 
