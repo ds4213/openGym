@@ -13,6 +13,10 @@ const program = {
 describe('program cycle', () => {
   it('maps common KeyLifts lifts and requires one TM per referenced exercise', () => {
     expect(resolveProgramExercise({ name: 'Overhead • Press' })).toBe('1162')
+    expect(resolveProgramExercise({ name: 'Romanian Deadlift (Barbell)' })).toBe('0085')
+    expect(resolveProgramExercise({ name: 'Bent-over Row (Dumbbell)' })).toBe('0293')
+    expect(resolveProgramExercise({ name: 'Face Pull (Cable)' })).toBe('5609')
+    expect(resolveProgramExercise({ name: 'Wheel Rollout' })).toBe('0857')
     expect(trainingMaxRequirements(program)).toEqual([
       { key: 'sq', name: 'Squat', exerciseId: '0043', needsTrainingMax: true },
       { key: 'bp', name: 'Bench Press', exerciseId: '0025', needsTrainingMax: true },
@@ -26,6 +30,7 @@ describe('program cycle', () => {
     expect(() => createProgramCycle(custom, {}, 'kg')).toThrow('Program setup is incomplete')
     const mappings = { mystery: { exerciseId: '0032', _ts: 10 } }
     expect(resolveProgramExercise({ name: 'Squat', referenceExerciseId: 'sq' }, { sq: { exerciseId: '0025' } })).toBe('0025')
+    expect(resolveProgramExercise({ name: 'Front Squat', referenceExerciseId: 'front-squat' }, { 'front-squat': { exerciseId: '0043' } })).toBe('0043')
     expect(createProgramCycle(custom, {}, 'kg', 1000, 'c2', mappings).exerciseMap).toEqual({ mystery: '0032' })
   })
 
