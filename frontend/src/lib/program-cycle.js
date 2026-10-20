@@ -25,44 +25,38 @@ for (const exercise of CATALOGUE) {
 
 export const programExerciseKey = exercise => exercise?.referenceExerciseId || clean(exercise?.name || exercise?.exerciseName)
 
-export function resolveProgramExercise(exercise) {
+export function resolveProgramExercise(exercise, mappings = {}) {
+  const mapped = mappings?.[programExerciseKey(exercise)]
+  if (mapped?.exerciseId && !mapped.deleted) return mapped.exerciseId
   const name = clean(exercise?.name || exercise?.exerciseName)
   return COMMON_LIFTS[name] || exactExercises.get(name) || null
 }
 
-export function trainingMaxRequirements(program) {
+export function programExerciseRequirements(program, mappings = {}) {
   const seen = new Set()
   const out = []
   for (const week of program?.schedule || []) for (const day of week.days || []) for (const exercise of day.exercises || []) {
-    if (!(exercise.sets || []).some(set => Number(set.percentage) > 0)) continue
     const key = programExerciseKey(exercise)
     if (!key || seen.has(key)) continue
     seen.add(key)
-    out.push({ key, name: exercise.name || exercise.exerciseName || 'Exercise', exerciseId: resolveProgramExercise(exercise) })
+    out.push({ key, name: exercise.name || exercise.exerciseName || 'Exercise', exerciseId: resolveProgramExercise(exercise, mappings), needsTrainingMax: (exercise.sets || []).some(set => Number(set.percentage) > 0) })
   }
   return out
 }
 
-function exerciseMapFor(program) {
-  const out = {}
-  for (const week of program?.schedule || []) for (const day of week.days || []) for (const exercise of day.exercises || []) {
-    const key = programExerciseKey(exercise)
-    if (key && !(key in out)) out[key] = resolveProgramExercise(exercise)
-  }
-  return out
-}
+export const trainingMaxRequirements = (program, mappings = {}) => programExerciseRequirements(program, mappings).filter(item => item.needsTrainingMax)
 
-export function createProgramCycle(program, trainingMaxes, unit, now = Date.now(), id = 'c' + uid()) {
-  const requirements = trainingMaxRequirements(program)
-  const missing = requirements.filter(item => !item.exerciseId || !(Number(trainingMaxes?.[item.key]) > 0))
-  if (missing.length) throw new Error('Program setup is incomplete')
+export function createProgramCycle(program, trainingMaxes, unit, now = Date.now(), id = 'c' + uid(), mappings = {}) {
+  const exercises = programExerciseRequirements(program, mappings)
+  const requirements = exercises.filter(item => item.needsTrainingMax)
+  if (exercises.some(item => !item.exerciseId) || requirements.some(item => !(Number(trainingMaxes?.[item.key]) > 0))) throw new Error('Program setup is incomplete')
   return {
     id,
     programId: program.id,
     programName: program.name,
     templateVersion: program.contentVersion || program.sourceProgram?.contentVersion || null,
     schedule: clone(program.schedule || []),
-    exerciseMap: exerciseMapFor(program),
+    exerciseMap: Object.fromEntries(exercises.map(item => [item.key, item.exerciseId])),
     trainingMaxes: Object.fromEntries(requirements.map(item => [item.key, { exerciseId: item.exerciseId, name: item.name, value: Number(trainingMaxes[item.key]), unit }])),
     unit,
     status: 'active',

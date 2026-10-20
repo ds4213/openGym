@@ -2817,7 +2817,7 @@ export function startProgram(program, trainingMaxes) {
   const st = S()
   if (st.active) { toast(t('Finish the current workout first.')); return false }
   let cycle
-  try { cycle = createProgramCycle(program, trainingMaxes, st.unit) } catch (error) { toast(error.message); return false }
+  try { cycle = createProgramCycle(program, trainingMaxes, st.unit, Date.now(), undefined, st.programExerciseMap) } catch (error) { toast(error.message); return false }
   if (st.weighIn === false) return beginProgramWorkout(cycle, null)
   bwSheet({ required: true, onDone: bw => beginProgramWorkout(cycle, bw) })
   return true

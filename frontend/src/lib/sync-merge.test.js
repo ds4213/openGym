@@ -10,7 +10,7 @@ const routine = (id, name = id) => ({ id, name, ex: [] })
 const base = (over = {}) => ({
   unit: 'kg', restSec: 90, lang: 'en', week: { 1: ['r1'] }, dayPlan: {},
   workouts: [], routines: [], bodyweight: [], customEx: [], favEx: [], exWeights: {}, exNotes: {}, barWeights: {},
-  equipProfiles: [], gymCards: [], personalPrograms: {}, programCycles: {}, _ts: 0, ...over
+  equipProfiles: [], gymCards: [], personalPrograms: {}, programCycles: {}, programExerciseMap: {}, _ts: 0, ...over
 })
 
 describe('personal programs sync independently', () => {
@@ -43,6 +43,13 @@ describe('personal programs sync independently', () => {
     const current = base({ programCycles: { c: { id: 'c', currentDay: 1, _ts: 20 } } })
     expect(mergeStates(old, current).programCycles.c.currentDay).toBe(1)
     expect(localExtras(current, base()).setup).toBe(1)
+  })
+
+  it('merges program exercise mappings per source exercise', () => {
+    const old = base({ programExerciseMap: { squat: { exerciseId: '0043', _ts: 10 } } })
+    const current = base({ programExerciseMap: { squat: { exerciseId: '0025', _ts: 20 }, press: { exerciseId: '1162', _ts: 15 } } })
+    expect(mergeStates(old, current).programExerciseMap).toEqual(current.programExerciseMap)
+    expect(localExtras(current, base()).setup).toBe(2)
   })
 })
 const clone = o => JSON.parse(JSON.stringify(o))

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { advanceProgramCycle, buildProgramWorkout, createProgramCycle, resolveProgramExercise, trainingMaxRequirements } from './program-cycle.js'
+import { advanceProgramCycle, buildProgramWorkout, createProgramCycle, programExerciseRequirements, resolveProgramExercise, trainingMaxRequirements } from './program-cycle.js'
 
 const exercise = (name, referenceExerciseId, percentage = .65) => ({ name, referenceExerciseId, sets: [{ type: 'warmup', reps: 5, percentage: .4 }, { type: 'regular', reps: 5, percentage }] })
 const program = {
@@ -14,10 +14,19 @@ describe('program cycle', () => {
   it('maps common KeyLifts lifts and requires one TM per referenced exercise', () => {
     expect(resolveProgramExercise({ name: 'Overhead • Press' })).toBe('1162')
     expect(trainingMaxRequirements(program)).toEqual([
-      { key: 'sq', name: 'Squat', exerciseId: '0043' },
-      { key: 'bp', name: 'Bench Press', exerciseId: '0025' },
-      { key: 'dl', name: 'Deadlift', exerciseId: '0032' },
+      { key: 'sq', name: 'Squat', exerciseId: '0043', needsTrainingMax: true },
+      { key: 'bp', name: 'Bench Press', exerciseId: '0025', needsTrainingMax: true },
+      { key: 'dl', name: 'Deadlift', exerciseId: '0032', needsTrainingMax: true },
     ])
+  })
+
+  it('reuses a manual mapping and requires every scheduled exercise to be mapped', () => {
+    const custom = { id: 'custom', name: 'Custom plan', schedule: [{ number: 1, days: [{ name: 'Day 1', exercises: [{ name: 'Mystery pull', referenceExerciseId: 'mystery', sets: [{ reps: 10 }] }] }] }] }
+    expect(programExerciseRequirements(custom)[0].exerciseId).toBeNull()
+    expect(() => createProgramCycle(custom, {}, 'kg')).toThrow('Program setup is incomplete')
+    const mappings = { mystery: { exerciseId: '0032', _ts: 10 } }
+    expect(resolveProgramExercise({ name: 'Squat', referenceExerciseId: 'sq' }, { sq: { exerciseId: '0025' } })).toBe('0025')
+    expect(createProgramCycle(custom, {}, 'kg', 1000, 'c2', mappings).exerciseMap).toEqual({ mystery: '0032' })
   })
 
   it('freezes the schedule and builds the first openGym workout from TM percentages', () => {

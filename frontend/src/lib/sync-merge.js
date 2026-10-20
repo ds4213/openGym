@@ -36,7 +36,7 @@
  *     is the exception: the edit may have taken away the set the kept weight came from, so it
  *     is the best of the merged history and of the editing copy's own, and the other copy's
  *     can no longer bring a corrected typo back. exNotes, barWeights: key union
- *   - balanceOverrides, loadKind, plates, dbLoad, dumbbells, dayNotes, personalPrograms, programCycles: key union; of a key both
+ *   - balanceOverrides, loadKind, plates, dbLoad, dumbbells, dayNotes, personalPrograms, programCycles, programExerciseMap: key union; of a key both
  *     have, the entry set last by its own `_ts`, a clear included (mergeStampedMap), the newer
  *     copy's on a tie. For plates and dumbbells the key is the unit, so the inventory of one unit
  *     is kept whole, as last edited; for dayNotes the key is the date, so each day's note is its own
@@ -83,7 +83,7 @@ const clone = o => JSON.parse(JSON.stringify(o))
 const list = v => (Array.isArray(v) ? v : [])
 // The maps whose every entry carries its own edit time (mergeStampedMap). dayNotes is a day's
 // note on a day off (lib/day-notes.js), one entry per date.
-export const STAMPED_MAPS = ['balanceOverrides', 'loadKind', 'plates', 'dbLoad', 'dumbbells', 'dayNotes', 'personalPrograms', 'programCycles']
+export const STAMPED_MAPS = ['balanceOverrides', 'loadKind', 'plates', 'dbLoad', 'dumbbells', 'dayNotes', 'personalPrograms', 'programCycles', 'programExerciseMap']
 
 /** The copy with the later `_ts`; on a tie the first argument (callers pass local first). */
 export const newerOf = (a, b) => ((b?._ts || 0) > (a?._ts || 0) ? b : a)
@@ -612,7 +612,7 @@ function applyDeletions(S, deleted) {
 const OWN_MERGE = new Set([
   '_ts', '_rev', '_wid', '_wids', '_unstamped', '_prior', 'active', 'unit', 'unitSet', 'resetAt', 'resetIds', 'deleted', 'edited', 'undone', 'routineOrder',
   'workouts', 'routines', 'customEx', 'equipProfiles', 'gymCards', 'bodyweight', 'measurements', 'favEx',
-  'exWeights', 'balanceOverrides', 'loadKind', 'plates', 'dbLoad', 'dumbbells', 'dayNotes', 'personalPrograms', 'programCycles',
+  'exWeights', 'balanceOverrides', 'loadKind', 'plates', 'dbLoad', 'dumbbells', 'dayNotes', 'personalPrograms', 'programCycles', 'programExerciseMap',
 ])
 // Stamped per key instead of whole: one day of the plan, one exercise's note or bar.
 const PER_KEY = new Set(['week', 'dayPlan', 'exNotes', 'barWeights'])
@@ -1129,6 +1129,7 @@ export function localExtras(local, server) {
     Object.entries(isMap(local?.dayNotes) ? local.dayNotes : {}).filter(([k, v]) => readNote(v) && !readNote(server?.dayNotes?.[k])).length +
     Object.entries(isMap(local?.personalPrograms) ? local.personalPrograms : {}).filter(([k, v]) => v && !v.deleted && !(isMap(server?.personalPrograms) && server.personalPrograms[k] && !server.personalPrograms[k].deleted)).length +
     Object.entries(isMap(local?.programCycles) ? local.programCycles : {}).filter(([k, v]) => v && !v.deleted && !(isMap(server?.programCycles) && server.programCycles[k] && !server.programCycles[k].deleted)).length +
+    Object.entries(isMap(local?.programExerciseMap) ? local.programExerciseMap : {}).filter(([k, v]) => v && !v.deleted && !(isMap(server?.programExerciseMap) && server.programExerciseMap[k] && !server.programExerciseMap[k].deleted)).length +
     keysNew('week') + keysNew('dayPlan') + keysNew('exNotes')
   return {
     workouts: list(local?.workouts).filter(w => !have.has(workoutKey(w))).length,

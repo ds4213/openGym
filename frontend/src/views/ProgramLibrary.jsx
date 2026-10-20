@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../lib/api.js'
-import { t } from '../lib/i18n.js'
+import { exerciseNameFor, t } from '../lib/i18n.js'
 import { programText as p } from '../lib/program-text.js'
 import { useStore } from '../store/useStore.js'
 import { copyProgramTemplate, personalProgramsOf } from '../lib/personal-programs.js'
-import { cycleForProgram, trainingMaxRequirements } from '../lib/program-cycle.js'
+import { cycleForProgram, programExerciseRequirements, trainingMaxRequirements } from '../lib/program-cycle.js'
+import { EXIDX } from '../lib/exercises.js'
 import Icon from '../components/Icon.jsx'
 import { Button, NumberField, Row, Section, SearchField, Segmented } from '../components/ui.jsx'
 
@@ -101,6 +102,7 @@ function ProgramDetail({ id }) {
   const nav = useNavigate()
   const personal = useStore(state => state.S.personalPrograms?.[id])
   const programCycles = useStore(state => state.S.programCycles)
+  const exerciseMappings = useStore(state => state.S.programExerciseMap || {})
   const active = useStore(state => state.S.active)
   const unit = useStore(state => state.S.unit)
   const update = useStore(state => state.update)
@@ -130,9 +132,10 @@ function ProgramDetail({ id }) {
   ].filter(([, value]) => value !== null && value !== undefined && value !== '')
   const week = program.schedule?.find(item => item.number === selectedWeek)
   const cycle = cycleForProgram({ programCycles }, program.id)
-  const tmRequirements = trainingMaxRequirements(program)
-  const unmapped = tmRequirements.filter(item => !item.exerciseId)
-  const ready = tmRequirements.length > 0 && !unmapped.length && tmRequirements.every(item => Number(trainingMaxes[item.key]) > 0)
+  const exerciseRequirements = programExerciseRequirements(program, exerciseMappings)
+  const tmRequirements = trainingMaxRequirements(program, exerciseMappings)
+  const unmapped = exerciseRequirements.filter(item => !item.exerciseId)
+  const ready = exerciseRequirements.length > 0 && !unmapped.length && tmRequirements.every(item => Number(trainingMaxes[item.key]) > 0)
   const copy = () => {
     const saved = copyProgramTemplate(program)
     update(state => { state.personalPrograms = { ...(state.personalPrograms || {}), [saved.id]: saved } })
@@ -141,6 +144,21 @@ function ProgramDetail({ id }) {
   const start = async () => {
     const { startProgram } = await import('../sheets.jsx')
     startProgram(program, trainingMaxes)
+  }
+  const chooseExercise = async item => {
+    const { exercisePicker } = await import('../sheets.jsx')
+    const picker = exercisePicker(exercise => {
+      update(state => {
+        state.programExerciseMap = { ...(state.programExerciseMap || {}), [item.key]: { exerciseId: exercise.id, exerciseName: exercise.n, sourceName: item.name, _ts: Date.now() } }
+      })
+      picker.close()
+    }, { title: p('Map {0}', item.name), like: item.exerciseId })
+  }
+  const mappedName = item => EXIDX[item.exerciseId] ? exerciseNameFor(EXIDX[item.exerciseId]) : exerciseMappings[item.key]?.exerciseName
+  const viewExercise = async item => {
+    if (!EXIDX[item.exerciseId]) return
+    const { exerciseDetailSheet } = await import('../sheets.jsx')
+    exerciseDetailSheet(EXIDX[item.exerciseId])
   }
   const resume = async () => {
     if (active?.programCycle?.id === cycle.id) { nav('/workout'); return }
@@ -163,10 +181,18 @@ function ProgramDetail({ id }) {
       </> : <>
         <Button variant="primary" icon="play" onClick={() => setSetup(value => !value)}>{cycle?.status === 'completed' ? p('Start again') : p('Start Program')}</Button>
         {setup && <div className="program-tm-setup">
+          <h2>{p('Exercise mapping')}</h2>
+          <p className="small dim">{p('Choose the openGym exercise used for history, PRs, and AI analysis. Your choices sync and are reused in other programs.')}</p>
+          {exerciseRequirements.map(item => <div className="program-map-row" key={item.key}>
+            <span><strong>{item.name}</strong>{item.exerciseId && EXIDX[item.exerciseId]
+              ? <button type="button" className="program-map-link" onClick={() => viewExercise(item)}>{mappedName(item)}</button>
+              : <small className="missing">{mappedName(item) || p('Exercise mapping required')}</small>}</span>
+            <Button size="sm" onClick={() => chooseExercise(item)}>{item.exerciseId ? p('Change') : p('Choose exercise')}</Button>
+          </div>)}
           <h2>{p('Training Max')}</h2>
           <p className="small dim">{p('Set the Training Max used to calculate this cycle. It stays separate from your estimated 1RM.')}</p>
           {tmRequirements.map(item => <label className="program-tm-row" key={item.key}>
-            <span><strong>{item.name}</strong>{!item.exerciseId && <small>{p('Exercise mapping required')}</small>}</span>
+            <span><strong>{item.name}</strong></span>
             <span><NumberField value={trainingMaxes[item.key] ?? ''} nullable onChange={value => setTrainingMaxes(current => ({ ...current, [item.key]: value }))} aria-label={`${item.name} TM`} /> {unit}</span>
           </label>)}
           {!!unmapped.length && <p className="program-compat-warning"><Icon name="warning" /> {p('Map every exercise to openGym before starting this program.')}</p>}
