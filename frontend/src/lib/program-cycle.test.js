@@ -43,6 +43,29 @@ describe('program cycle', () => {
     expect(workout.entries[0].sets[1].r).toBe(5)
   })
 
+  it('keeps KeyLifts set roles and uses fixed weights for the profile unit', () => {
+    const special = {
+      id: 'special', name: 'Special sets',
+      schedule: [{ number: 1, days: [{ name: 'Day 1', exercises: [{
+        name: 'Squat', referenceExerciseId: 'sq', sets: [
+          { type: 'pr', reps: 5, weight: { kg: 50, lb: 110 } },
+          { type: 'joker', reps: 1, percentage: 1.05 },
+          { type: 'drop', reps: 8, weight: { kg: 40, lb: 90 } },
+          { type: 'restPause', reps: 20, weight: 30 },
+          { type: 'failed', reps: 5, weight: 55 },
+        ],
+      }] }] }],
+    }
+    const cycle = createProgramCycle(special, { sq: 100 }, 'lb', 1000, 'special-cycle')
+    expect(buildProgramWorkout(cycle, 'cards', 2000, 'special-workout').entries[0].sets).toEqual([
+      { r: 5, w: 110, done: false, programSetType: 'pr' },
+      { r: 1, w: 105, done: false, programSetType: 'joker' },
+      { r: 8, w: 90, done: false, type: 'dropset', programSetType: 'drop' },
+      { r: 20, w: 30, done: false, type: 'restpause', programSetType: 'restpause' },
+      { r: 5, w: 55, done: false, failure: true, programSetType: 'failed' },
+    ])
+  })
+
   it('advances across days and weeks, then completes once', () => {
     let cycle = createProgramCycle(program, { sq: 100, bp: 80, dl: 120 }, 'kg', 1000, 'c1')
     cycle = advanceProgramCycle(cycle, 2000)

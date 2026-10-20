@@ -11,8 +11,9 @@ import { useStore } from '../store/useStore.js'
 
 const copy = value => structuredClone(value)
 const exerciseName = exercise => exercise.exerciseId && EXIDX[exercise.exerciseId] ? exerciseNameFor(EXIDX[exercise.exerciseId]) : exercise.name || exercise.exerciseName || p('Exercise')
+const SET_TYPES = [['regular', 'Regular'], ['warmup', 'Warmup'], ['pr', 'PR set'], ['joker', 'Joker'], ['failed', 'Failure'], ['drop', 'Drop'], ['restPause', 'Rest-pause'], ['supplemental', 'Supplemental'], ['assistance', 'Assistance'], ['T1', 'T1']]
 
-const newSet = source => ({ id: 'ps' + uid(), reps: Number(source?.reps) || 8, order: 0, weight: Number(source?.weight) || 0, percentage: Number(source?.percentage) || 0, ...(source?.type ? { type: source.type } : {}) })
+const newSet = source => ({ id: 'ps' + uid(), reps: Number(source?.reps) || 8, order: 0, weight: source?.weight && typeof source.weight === 'object' ? { ...source.weight } : Number(source?.weight) || 0, percentage: Number(source?.percentage) || 0, ...(source?.type ? { type: source.type } : {}) })
 const newExercise = (programId, exercise) => {
   const id = 'pe' + uid()
   return { id, name: exercise.n, exerciseName: exercise.n, referenceExerciseId: `personal:${programId}:${id}`, exerciseId: exercise.id, sets: [newSet()] }
@@ -96,8 +97,9 @@ export default function ProgramEdit() {
           <span className="program-set-number">{setIndex + 1}</span>
           <label><span>{p('Reps')}</span><NumberField aria-label={p('Reps')} decimal={false} value={set.reps || 0} onChange={value => edit(next => { next.schedule[weekIndex].days[dayIndex].exercises[exerciseIndex].sets[setIndex].reps = value || 0 })} /></label>
           <label><span>% TM</span><NumberField aria-label="% TM" value={Number(set.percentage) > 0 ? Number(set.percentage) * 100 : 0} onChange={value => edit(next => { const target = next.schedule[weekIndex].days[dayIndex].exercises[exerciseIndex].sets[setIndex]; target.percentage = (value || 0) / 100; if (value > 0) target.weight = 0 })} /></label>
-          <label><span>{unit}</span><NumberField aria-label={unit} value={set.weight || 0} onChange={value => edit(next => { const target = next.schedule[weekIndex].days[dayIndex].exercises[exerciseIndex].sets[setIndex]; target.weight = value || 0; if (value > 0) target.percentage = 0 })} /></label>
+          <label><span>{unit}</span><NumberField aria-label={unit} value={Number(typeof set.weight === 'object' ? set.weight?.[unit] : set.weight) || 0} onChange={value => edit(next => { const target = next.schedule[weekIndex].days[dayIndex].exercises[exerciseIndex].sets[setIndex]; target.weight = value || 0; if (value > 0) target.percentage = 0 })} /></label>
           <button className="iconbtn" aria-label={p('Remove set')} disabled={exercise.sets.length === 1} onClick={() => edit(next => { next.schedule[weekIndex].days[dayIndex].exercises[exerciseIndex].sets.splice(setIndex, 1) })}><Icon name="minus" /></button>
+          <label className="program-set-type"><span>{p('Set type')}</span><select aria-label={p('Set type')} value={set.type || 'regular'} onChange={event => edit(next => { next.schedule[weekIndex].days[dayIndex].exercises[exerciseIndex].sets[setIndex].type = event.target.value })}>{SET_TYPES.map(([value, label]) => <option key={value} value={value}>{p(label)}</option>)}</select></label>
         </div>)}</div>
         <Button size="sm" icon="plus" onClick={() => edit(next => { const sets = next.schedule[weekIndex].days[dayIndex].exercises[exerciseIndex].sets; sets.push(newSet(sets.at(-1))) })}>{p('Add set')}</Button>
       </div>)}</div>

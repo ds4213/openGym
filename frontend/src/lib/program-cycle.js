@@ -139,14 +139,18 @@ const snap = (value, unit) => {
   return Math.round((Number(value) || 0) / step) * step
 }
 
+const fixedWeight = (set, unit) => Number(set?.weight && typeof set.weight === 'object' ? set.weight[unit] : set?.weight) || 0
+
 function workoutRow(set, tm, unit) {
-  const weight = Number(set.percentage) > 0 ? snap(tm * Number(set.percentage), unit) : Number(set.weight) || 0
+  const weight = Number(set.percentage) > 0 ? snap(tm * Number(set.percentage), unit) : fixedWeight(set, unit)
   const type = String(set.type || '').toLocaleLowerCase()
   const row = Number(set.duration) > 0 && !(Number(set.reps) > 0)
     ? { sec: Number(set.duration), w: weight, done: false }
     : { r: Number(set.reps) || 0, w: weight, done: false }
   if (type === 'warmup') row.phase = 'warmup'
-  if (type === 'failure') row.failure = true
+  if (type === 'failed' || type === 'failure') row.failure = true
+  if (type === 'drop') row.type = 'dropset'
+  if (type === 'restpause') row.type = 'restpause'
   if (type && type !== 'regular') row.programSetType = type
   if (Number(set.repsInReserve) >= 0 && set.repsInReserve !== null && set.repsInReserve !== '') row.rir = Number(set.repsInReserve)
   if (Number(set.ratePerceivedExertion) > 0) row.rpe = Number(set.ratePerceivedExertion)
