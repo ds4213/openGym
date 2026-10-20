@@ -65,7 +65,7 @@ function oneSetText(set) {
   const parts = []
   const reps = Number(set.reps)
   const min = Number(set.minRepsProgression)
-  const max = Number(set.maxReps)
+  const max = Number(set.maxRepsProgression ?? set.maxReps)
   if (min > 0 && max >= min) parts.push(`${min}–${max} ${p('reps')}`)
   else if (reps > 0) parts.push(`${compactNumber(reps)} ${p('reps')}`)
   else if (Number(set.duration) > 0) parts.push(`${compactNumber(set.duration)} ${p('seconds')}`)
@@ -77,6 +77,18 @@ function oneSetText(set) {
   const type = String(set.type || '').toLocaleLowerCase()
   if (type && type !== 'regular') parts.push(p(type === 'pr' ? 'PR set' : type[0].toLocaleUpperCase() + type.slice(1)))
   return parts.join(' · ') || p('Set')
+}
+
+export function progressionText(exercise, unit = '') {
+  const type = String(exercise?.progression || '').toLocaleLowerCase()
+  if (!type || type === 'none') return ''
+  if (type === 'classic') return p('Increase next cycle')
+  if (type === 'auto_regulation') return p('Auto regulation')
+  if (type === 'specific_week') return p('Increase after week {0}', (exercise.weeksForIncrease || []).join(', '))
+  if (type === 'reps_only') return p('Increase reps by {0}', Number(exercise.repsAdjustment) || 1)
+  if (type === 'weight') return p('Increase weight by {0} {1}', Number(exercise.weightAdjustment) || 0, unit)
+  if (type === 'reps_then_weight') return p('Increase reps by {0}, then weight by {1} {2}', Number(exercise.repsAdjustment) || 1, Number(exercise.weightAdjustment) || 0, unit)
+  return p('Progression needs review')
 }
 
 export function setPrescription(sets = []) {
@@ -165,6 +177,10 @@ function ProgramDetail({ id }) {
     const { continueProgram } = await import('../sheets.jsx')
     continueProgram(cycle.id)
   }
+  const toggleSetup = () => {
+    if (!setup && cycle?.trainingMaxes) setTrainingMaxes(Object.fromEntries(Object.entries(cycle.trainingMaxes).map(([key, value]) => [key, value.value])))
+    setSetup(value => !value)
+  }
 
   return <div className="narrow programs-page">
     <div className="hdr">
@@ -180,7 +196,7 @@ function ProgramDetail({ id }) {
         <div className="program-schedule-head"><h2>{p('Current cycle')}</h2><span>{p('Week {0}', cycle.currentWeek + 1)} · {p('Day {0}', cycle.currentDay + 1)}</span></div>
         <Button variant="primary" icon="play" onClick={resume}>{active?.programCycle?.id === cycle.id ? p('Continue workout') : p('Start next workout')}</Button>
       </> : <>
-        <Button variant="primary" icon="play" onClick={() => setSetup(value => !value)}>{cycle?.status === 'completed' ? p('Start again') : p('Start Program')}</Button>
+        <Button variant="primary" icon="play" onClick={toggleSetup}>{cycle?.status === 'completed' ? p('Start again') : p('Start Program')}</Button>
         {setup && <div className="program-tm-setup">
           <h2>{p('Exercise mapping')}</h2>
           <p className="small dim">{p('Choose the openGym exercise used for history, PRs, and AI analysis. Your choices sync and are reused in other programs.')}</p>
@@ -209,7 +225,7 @@ function ProgramDetail({ id }) {
       <div className="program-days">{week?.days.map((day, dayIndex) => <article className="program-day" key={day.id || dayIndex}>
         <div className="program-day-head"><strong>{day.name || p('Day {0}', dayIndex + 1)}</strong><span>{p('{0} exercises', day.exercises?.length || 0)}</span></div>
         <div className="program-exercises">{(day.exercises || []).map((exercise, exerciseIndex) => <div className="program-exercise" key={exercise.id || exerciseIndex}>
-          <div><strong>{programExerciseName(exercise)}</strong><span>{[exercise.type, exercise.category, exercise.superset != null ? p('Superset {0}', exercise.superset) : ''].filter(Boolean).join(' · ')}</span></div>
+          <div><strong>{programExerciseName(exercise)}</strong><span>{[exercise.type, exercise.category, exercise.superset != null ? p('Superset {0}', exercise.superset) : '', progressionText(exercise, unit)].filter(Boolean).join(' · ')}</span></div>
           <p>{setPrescription(exercise.sets)}</p>
           {exercise.recommendation && <small>{exercise.recommendation}</small>}
         </div>)}</div>

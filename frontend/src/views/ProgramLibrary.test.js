@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('../store/useStore.js', () => ({ useStore: selector => selector({ S: { personalPrograms: {}, programCycles: {}, active: null, unit: 'kg' }, update: () => {} }) }))
-import { discoveryGroups, filterProgramCatalog, goalPresentation, programExerciseName, setPrescription, sortPrograms } from './ProgramLibrary.jsx'
+import { discoveryGroups, filterProgramCatalog, goalPresentation, programExerciseName, progressionText, setPrescription, sortPrograms } from './ProgramLibrary.jsx'
 
 const programs = [
   { name: 'Boring But Big', source: 'official', family: '531', phase: 'Leader', goal: 'Strength', daysPerWeek: 4, levels: [] },
@@ -57,6 +57,14 @@ describe('program prescription details', () => {
       { type: 'regular', reps: 5, percentage: 0.7 },
       { type: 'pr', reps: 5, percentage: 0.85 },
     ])).toBe('2 × 5 reps · @ 70% TM · 5 reps · @ 85% TM · PR set')
+  })
+
+  it('shows source rep ranges and progression rules without inventing missing increments', () => {
+    expect(setPrescription([{ reps: 12, minRepsProgression: 12, maxRepsProgression: 14 }])).toBe('12–14 reps')
+    expect(progressionText({ progression: 'classic' })).toBe('Increase next cycle')
+    expect(progressionText({ progression: 'specific_week', weeksForIncrease: [3] })).toBe('Increase after week 3')
+    expect(progressionText({ progression: 'reps_then_weight', repsAdjustment: 1, weightAdjustment: 5 }, 'lb')).toBe('Increase reps by 1, then weight by 5 lb')
+    expect(progressionText({ progression: 'undefined' })).toBe('Progression needs review')
   })
 
   it('names an exercise from the strongest available source and keeps assistance placeholders', () => {
